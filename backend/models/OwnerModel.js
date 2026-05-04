@@ -141,4 +141,34 @@ export class OwnerModel {
     await connection.close()
     return { success: true, owner_id }
   }
+
+  // Get owner by email or phone (for login)
+  static async getOwnerByEmailOrPhone(identifier) {
+    const connection = await dbConnection()
+    
+    // Check if identifier is email (contains @) or phone
+    const isEmail = identifier.includes('@')
+    
+    let result
+    if (isEmail) {
+      const request = connection.request()
+      request.input('identifier', sql.VarChar, identifier)
+      result = await request.query(`
+        SELECT owner_id, owner_name, owner_email, owner_phone_number, owner_password_hash
+        FROM PetOwner
+        WHERE owner_email = @identifier
+      `)
+    } else {
+      const request = connection.request()
+      request.input('identifier', sql.VarChar, identifier)
+      result = await request.query(`
+        SELECT owner_id, owner_name, owner_email, owner_phone_number, owner_password_hash
+        FROM PetOwner
+        WHERE owner_phone_number = @identifier
+      `)
+    }
+    
+    await connection.close()
+    return result.recordset[0]
+  }
 }

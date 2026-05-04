@@ -1,9 +1,77 @@
 import nodemailer from "nodemailer"
 import bcrypt from "bcryptjs"
+import jwt from "jsonwebtoken"
 import { OwnerModel } from "../models/OwnerModel.js"
 import { PasswordResetModel } from "../models/PasswordResetModel.js"
+import { UserSessionModel } from "../models/UserSessionModel.js"
 
 export class AuthController {
+  // Login - Accept email or phone number
+  static async login(req, res) {
+    try {
+      const { identifier, password, device_id } = req.body
+
+      if (!identifier || !password || !device_id) {
+        return res.status(400).json({ message: "Email/Phone, password, and device_id are required" })
+      }
+
+      console.log("Login attempt with identifier:", identifier, "device:", device_id)
+
+      // Get owner by email or phone
+      const owner = await OwnerModel.getOwnerByEmailOrPhone(identifier)
+      
+      if (!owner) {
+        return res.status(401).json({ message: "Invalid email/phone or password" })
+      }
+
+      // Check if this device already has an active session (from any user)
+      const activeSession = await UserSessionModel.getActiveSessionByDevice(device_id)
+      if (activeSession) {
+        return res.status(403).json({ 
+          message: "This device is already logged in. Please logout first before logging in.",
+          current_owner_id: activeSession.owner_id
+        })
+      }
+
+      // Compare password
+      const isPasswordValid = await bcrypt.compare(password, owner.owner_password_hash)
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid email/phone or password" })
+      }
+
+      // Determine login method (email or phone)
+      const loginMethod = identifier.includes('@') ? 'email' : 'phone'
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { owner_id: owner.owner_id, owner_email: owner.owner_email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      )
+
+      // Calculate expiry
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+      // Create session with device_id
+      await UserSessionModel.createSession(owner.owner_id, device_id, token, expiresAt)
+
+      res.status(200).json({
+        message: "Login successful",
+        token: token,
+        owner: {
+          owner_id: owner.owner_id,
+          owner_name: owner.owner_name,
+          owner_email: owner.owner_email,
+          owner_phone_number: owner.owner_phone_number
+        }
+      })
+    } catch (err) {
+      console.error("Login Error:", err)
+      res.status(500).json({ message: err.message })
+    }
+  }
+
   // Forgot Password - Send Verification Code
   static async forgotPassword(req, res) {
     try {
@@ -107,6 +175,23 @@ export class AuthController {
       res.status(200).json({ message: "Password reset successfully. You can now login." })
     } catch (err) {
       console.error("Reset Password Error:", err)
+      res.status(500).json({ message: err.message })
+    }
+  }
+
+  // Logout - Invalidate session
+  static async logout(req, res) {
+    try {
+      const { device_id } = req.body
+
+      if (!device_id) {
+        return res.status(400).json({ message: "Device ID is required" })
+      }
+
+      await UserSessionModel.invalidateSessionByDevice(device_id)
+      res.status(200).json({ message: "Logout successful" })
+    } catch (err) {
+      console.error("Logout Error:", err)
       res.status(500).json({ message: err.message })
     }
   }

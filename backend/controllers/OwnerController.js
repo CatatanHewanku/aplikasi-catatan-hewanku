@@ -10,10 +10,16 @@ export class OwnerController {
         return res.status(400).json({ message: "All fields are required" })
       }
 
-      // Check if email already exists BEFORE attempting insert
-      const existingOwner = await OwnerModel.getOwnerByEmail(owner_email)
-      if (existingOwner) {
+      // Check if email already exists
+      const existingEmail = await OwnerModel.getOwnerByEmail(owner_email)
+      if (existingEmail) {
         return res.status(409).json({ message: "Email already registered" })
+      }
+
+      // Check if phone number already exists
+      const existingPhone = await OwnerModel.getOwnerByPhone(owner_phone_number)
+      if (existingPhone) {
+        return res.status(409).json({ message: "Phone number already registered" })
       }
 
       const hashedPassword = await bcrypt.hash(password, 10)

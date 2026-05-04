@@ -1,4 +1,6 @@
 import { PetModel } from "../models/PetModel.js"
+import { cloudinary } from "../config/cloudinary.js"
+import { Readable } from "stream"
 
 export class PetController {
   static async createPet(req, res) {
@@ -9,17 +11,24 @@ export class PetController {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      // Handle image file conversion to base64
-      let pet_image = null
-      let pet_image_type = null
+      // Handle image file upload to Cloudinary
+      let pet_image_url = null
       if (req.file) {
-        const fileBuffer = req.file.buffer
-        pet_image = fileBuffer.toString('base64')
-        pet_image_type = req.file.mimetype
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'pets/profile', resource_type: 'auto' },
+            (error, result) => {
+              if (error) reject(error)
+              else resolve(result)
+            }
+          )
+          Readable.from(req.file.buffer).pipe(uploadStream)
+        })
+        pet_image_url = uploadResult.secure_url
       }
 
-      const result = await PetModel.createPet(owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image, pet_image_type)
-      res.status(201).json({ message: "Pet created successfully", data: result })
+      const petData = await PetModel.createPet(owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
+      res.status(201).json({ message: "Pet created successfully", data: petData })
     } catch (err) {
       res.status(500).json({ message: err.message })
     }
@@ -73,17 +82,31 @@ export class PetController {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      // Handle image file conversion to base64
-      let pet_image = null
-      let pet_image_type = null
+      let pet_image_url = null
       if (req.file) {
-        const fileBuffer = req.file.buffer
-        pet_image = fileBuffer.toString('base64')
-        pet_image_type = req.file.mimetype
+        // Get existing pet to delete old image if it exists
+        const existingPet = await PetModel.getPetById(pet_id)
+        if (existingPet && existingPet.pet_image) {
+          const publicId = existingPet.pet_image.split('/').pop().split('.')[0]
+          await cloudinary.uploader.destroy(`pets/profile/${publicId}`)
+        }
+
+        // Upload new image
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: 'pets/profile', resource_type: 'auto' },
+            (error, result) => {
+              if (error) reject(error)
+              else resolve(result)
+            }
+          )
+          Readable.from(req.file.buffer).pipe(uploadStream)
+        })
+        pet_image_url = uploadResult.secure_url
       }
 
-      const result = await PetModel.updatePet(pet_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image, pet_image_type)
-      res.status(200).json({ message: "Pet updated successfully", data: result })
+      const petData = await PetModel.updatePet(pet_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
+      res.status(200).json({ message: "Pet updated successfully", data: petData })
     } catch (err) {
       res.status(500).json({ message: err.message })
     }
