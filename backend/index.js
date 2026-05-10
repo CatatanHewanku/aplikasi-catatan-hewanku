@@ -2,6 +2,7 @@ import express from "express"
 import cors from "cors"
 import "dotenv/config"
 import { dbConnection } from "./config/connection.js"
+import { setupSyncCron } from "./syncService.js"
 import ownerRoutes from "./routes/ownerRoutes.js"
 import petRoutes from "./routes/petRoutes.js"
 import vetClinicRoutes from "./routes/vetClinicRoutes.js"
@@ -47,7 +48,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes)
 app.use("/api/owners", ownerRoutes)
 app.use("/api/pets", petRoutes)
-app.use("/api/clinics", vetClinicRoutes)
+app.use("/api/vet-clinics", vetClinicRoutes)
 app.use("/api/favorites", favoriteClinicRoutes)
 
 app.use((err, req, res, next) => {
@@ -59,10 +60,11 @@ app.use((err, req, res, next) => {
 dbConnection()
   .then(() => {
     console.log("Database connected successfully!")
-  })
-  .catch((err) => {
-    console.error("Database connection failed:", err.message)
-    process.exit(1)
+    if (process.env.ENABLE_AUTO_SYNC === 'true') {
+      setupSyncCron()
+    } else {
+      console.log("⚠️ Auto-sync disabled (development mode)")
+    }
   })
 
 app.listen(process.env.PORT, () => {
