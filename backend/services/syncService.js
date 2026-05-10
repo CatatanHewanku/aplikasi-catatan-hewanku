@@ -1,5 +1,5 @@
 import cron from 'node-cron'
-import { VetClinicModel } from './models/VetClinicModel.js'
+import { VetClinicModel } from '../models/VetClinicModel.js'
 import { searchVetClinicsGoogle, getBoundingBox } from './googlePlacesSearch.js'
 
 // Bekasi area only (using city name for geocoding)

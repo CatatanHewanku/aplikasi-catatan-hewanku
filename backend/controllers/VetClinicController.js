@@ -1,7 +1,7 @@
 import { VetClinicModel } from "../models/VetClinicModel.js"
-import { searchVetClinicsOSM } from "../osmSearch.js"
-import { getQuotaInfo, getEstimatedCost } from "../googlePlacesSearch.js"
-import { getCacheStatus, manualSync } from "../syncService.js"
+import { searchVetClinicsOSM } from "../services/osmSearch.js"
+import { getQuotaInfo, getEstimatedCost } from "../services/googlePlacesSearch.js"
+import { getCacheStatus, manualSync } from "../services/syncService.js"
 
 // Helper: Generate Google Maps URL from place_id
 const getGoogleMapsUrl = (placeId) => `https://www.google.com/maps/place/?q=place_id:${placeId}`

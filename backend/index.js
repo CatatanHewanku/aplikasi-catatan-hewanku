@@ -2,12 +2,13 @@ import express from "express"
 import cors from "cors"
 import "dotenv/config"
 import { dbConnection } from "./config/connection.js"
-import { setupSyncCron } from "./syncService.js"
+import { setupSyncCron } from "./services/syncService.js"
 import ownerRoutes from "./routes/ownerRoutes.js"
 import petRoutes from "./routes/petRoutes.js"
 import vetClinicRoutes from "./routes/vetClinicRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
 import favoriteClinicRoutes from "./routes/favoriteClinicRoutes.js"
+import medicalRecordRoutes from "./routes/medicalRecordRoutes.js"
 
 const PORT = process.env.PORT || 4000
 const app = express()
@@ -38,8 +39,9 @@ app.get("/", (req, res) => {
       auth: "/api/auth",
       owners: "/api/owners",
       pets: "/api/pets",
-      clinics: "/api/clinics",
-      favorites: "/api/favorites"
+      clinics: "/api/vet-clinics",
+      favorites: "/api/favorites",
+      medicalRecords: "/api/medical-records"
     }
   })
 })
@@ -50,6 +52,7 @@ app.use("/api/owners", ownerRoutes)
 app.use("/api/pets", petRoutes)
 app.use("/api/vet-clinics", vetClinicRoutes)
 app.use("/api/favorites", favoriteClinicRoutes)
+app.use("/api/medical-records", medicalRecordRoutes)
 
 app.use((err, req, res, next) => {
   res.status(500).json({
