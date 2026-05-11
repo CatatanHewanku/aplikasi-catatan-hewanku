@@ -63,7 +63,8 @@ export class AuthController {
           owner_id: owner.owner_id,
           owner_name: owner.owner_name,
           owner_email: owner.owner_email,
-          owner_phone_number: owner.owner_phone_number
+          owner_phone_number: owner.owner_phone_number,
+          owner_image_url: owner.owner_image_url
         }
       })
     } catch (err) {
@@ -75,16 +76,16 @@ export class AuthController {
   // Forgot Password - Send Verification Code
   static async forgotPassword(req, res) {
     try {
-      const { owner_email } = req.body
+      const { identifier } = req.body  // Accept email OR phone
 
-      if (!owner_email) {
-        return res.status(400).json({ message: "Email is required" })
+      if (!identifier) {
+        return res.status(400).json({ message: "Email or phone number is required" })
       }
 
-      // Check if owner exists
-      const owner = await OwnerModel.getOwnerByEmail(owner_email)
+      // Check if owner exists (by email or phone)
+      const owner = await OwnerModel.getOwnerByEmailOrPhone(identifier)
       if (!owner) {
-        return res.status(404).json({ message: "Email not found in our system" })
+        return res.status(404).json({ message: "Email or phone number not found in our system" })
       }
 
       // Generate 6-digit verification code
@@ -97,7 +98,7 @@ export class AuthController {
       await PasswordResetModel.saveResetCode(owner.owner_id, verificationCode, codeExpiry)
 
       // Send email with verification code
-      await sendVerificationCodeEmail(owner_email, verificationCode)
+      await sendVerificationCodeEmail(owner.owner_email, verificationCode)
 
       res.status(200).json({ 
         message: "Verification code sent to your email",
@@ -139,6 +140,8 @@ export class AuthController {
       // Check if code has expired
       const now = new Date()
       if (now > resetRecord.token_expiry) {
+        // Hard delete expired code
+        await PasswordResetModel.deleteExpiredCodes(owner_id)
         return res.status(400).json({ message: "Code has expired. Request a new one." })
       }
 

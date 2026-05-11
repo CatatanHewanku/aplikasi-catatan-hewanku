@@ -1,6 +1,7 @@
 import { Flex, Box, Text, Button } from "@chakra-ui/react";
 import { MdAccessTime, MdChevronRight, MdBolt, MdAdd, MdPets } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const getEvents = () => {
   const data = localStorage.getItem("events");
@@ -10,6 +11,23 @@ const getEvents = () => {
 export default function Home() {
   const navigate = useNavigate();
   const events = getEvents();
+  const [ownerName, setOwnerName] = useState("User");
+  const [userImage, setUserImage] = useState(null);
+
+  useEffect(() => {
+    let userData = JSON.parse(localStorage.getItem("owner"));
+    
+    if (!userData) {
+      userData = JSON.parse(localStorage.getItem("userProfile"));
+    }
+    
+    if (userData) {
+      const name = userData.owner_name || userData.firstName || "User";
+      const image = userData.owner_image_url || userData.image || null;
+      setOwnerName(name);
+      setUserImage(image);
+    }
+  }, []);
 
   const today = new Date();
 
@@ -33,19 +51,16 @@ export default function Home() {
       
       <Flex justify="space-between"align="center">
       <Text fontSize="xl" fontWeight="medium" color="Primary.900">
-        Welcome, Irene
+        Welcome, {ownerName}
       </Text>
 
       <Flex boxSize="50px" borderRadius="full" bg="Primary.200" justify="center" align="center" boxShadow="md" cursor="pointer" overflow="hidden" onClick={() => navigate("/user-profile")} > 
-        {JSON.parse(
-          localStorage.getItem("userProfile")
-        )?.image ? (
-          <img src={ JSON.parse( localStorage.getItem("userProfile") ).image }
+        {userImage ? (
+          <img src={userImage}
             style={{ width: "100%", height: "100%", objectFit: "cover"}}
           />
         ) : (
-          <Box color="Primary.800" fontSize="26px"
-          >
+          <Box color="Primary.800" fontSize="26px">
             <MdPets />
           </Box>
         )}

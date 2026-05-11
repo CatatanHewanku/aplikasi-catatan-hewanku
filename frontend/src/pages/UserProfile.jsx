@@ -1,8 +1,10 @@
 import { Flex, Box, Text, Image, Button, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
-import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt } from "react-icons/md";
+import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt, MdPets } from "react-icons/md";
 import { useNavigate } from "react-router-dom"; 
 import { useEffect, useState } from "react";
+import { authService } from "../services/authService";
 import Logo from "../images/Logo.jpeg";
+import api from "../services/authService";
   
 export default function UserProfile(){
   
@@ -19,40 +21,61 @@ export default function UserProfile(){
     const [image, setImage] = useState("");
   
     useEffect(() => {
-      const savedUser =
-        JSON.parse(localStorage.getItem("userProfile"));
-  
-      if(savedUser){
-  
-        setUser(savedUser);
-  
-        setFirstName(savedUser.firstName || "");
-        setEmail(savedUser.email || "");
-        setPhone(savedUser.phone || "");
-        setPassword(savedUser.password || "");
-        setImage(savedUser.image || "");
+      // Get owner name from backend format first
+      let userData = JSON.parse(localStorage.getItem("owner"));
+      
+      // Fall back to old localStorage format
+      if (!userData) {
+        userData = JSON.parse(localStorage.getItem("userProfile"));
       }
-  
+
+      if(userData){
+        setUser(userData);
+        setFirstName(userData.owner_name || userData.firstName || "");
+        setEmail(userData.owner_email || userData.email || "");
+        setPhone(userData.owner_phone_number || userData.phone || "");
+        setPassword(userData.password || "");
+        setImage(userData.owner_image_url || userData.image || "");  // ← Make sure this line includes owner_image_url
+      }
+      
     }, []);
   
-    const handleImageUpload = (e) => {
-  
+    const handleImageUpload = async (e) => {
       const file = e.target.files[0];
-  
       if(!file) return;
-  
+
+      // Show local preview immediately
       const reader = new FileReader();
-  
       reader.onloadend = () => {
-  
         setImage(reader.result);
       };
-  
       reader.readAsDataURL(file);
+
+      // Upload to backend Cloudinary
+      try {
+        const ownerData = JSON.parse(localStorage.getItem("owner"));
+        if (ownerData?.owner_id) {
+          const formData = new FormData();
+          formData.append('image', file);
+
+          const response = await fetch(`http://localhost:4000/api/owners/${ownerData.owner_id}/upload-image`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setImage(data.image_url);
+            console.log("Image uploaded to Cloudinary:", data.image_url);
+          }
+        }
+      } catch (error) {
+        console.log("Backend image upload failed:", error);
+        // Still keep local preview if backend fails
+      }
     };
   
     const handleSave = () => {
-  
       const updatedUser = {
         firstName,
         email,
@@ -60,21 +83,23 @@ export default function UserProfile(){
         password,
         image
       };
-  
-      localStorage.setItem(
-        "userProfile",
-        JSON.stringify(updatedUser)
-      );
-  
+
+      localStorage.setItem("userProfile", JSON.stringify(updatedUser));
       setUser(updatedUser);
-  
       setIsEdit(false);
     };
   
-    const handleLogout = () => {
-  
-      localStorage.removeItem("isLogin");
-  
+    const handleLogout = async () => {
+      try {
+        await authService.logout();
+      } catch (error) {
+        console.error("Logout error:", error);
+        // Still logout even if backend fails
+        localStorage.removeItem("isLogin");
+        localStorage.removeItem("token");
+        localStorage.removeItem("owner");
+      }
+      
       window.location.href = "/";
     };
   
@@ -99,7 +124,15 @@ export default function UserProfile(){
   
           <Flex justify="center" mb="30px">
             <Box position="relative" cursor={isEdit ? "pointer" : "default"} >
-              <Image src={ image || "https://via.placeholder.com/120" } boxSize="120px" borderRadius="full" objectFit="cover" bg="Primary.100" />
+              <Flex boxSize="120px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden">
+                {image ? (
+                  <Image src={image} boxSize="120px" borderRadius="full" objectFit="cover" />
+                ) : (
+                  <Box color="Primary.800" fontSize="50px">
+                    <MdPets />
+                  </Box>
+                )}
+              </Flex>
               {isEdit && (
                 <>
                   <Flex position="absolute"bottom="0" right="0" bg="Primary.800" boxSize="36px" borderRadius="full" justify="center" align="center" color="white" boxShadow="md" >

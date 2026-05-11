@@ -1,10 +1,12 @@
 import { OwnerModel } from "../models/OwnerModel.js"
+import { uploadToCloudinary } from "../config/cloudinary.js"
 import bcrypt from "bcryptjs"
+import jwt from "jsonwebtoken"
 
 export class OwnerController {
   static async createOwner(req, res) {
     try {
-      const { owner_name, owner_email, password, owner_phone_number } = req.body
+      const { owner_name, owner_email, password, owner_phone_number, device_id } = req.body
 
       if (!owner_name || !owner_email || !password || !owner_phone_number) {
         return res.status(400).json({ message: "All fields are required" })
@@ -30,8 +32,33 @@ export class OwnerController {
         hashedPassword,
         owner_phone_number
       )
-      res.status(201).json({ message: "User created successfully", data: result })
+
+      // Generate JWT token (like login)
+      const token = jwt.sign(
+        { owner_id: result.owner_id, owner_email: result.owner_email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      )
+
+      // Create session with device_id
+      if (device_id) {
+        const { UserSessionModel } = await import("../models/UserSessionModel.js")
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        await UserSessionModel.createSession(result.owner_id, device_id, token, expiresAt)
+      }
+
+      res.status(201).json({ 
+        message: "User created successfully",
+        token: token,
+        owner: {
+          owner_id: result.owner_id,
+          owner_name: result.owner_name,
+          owner_email: result.owner_email,
+          owner_phone_number: result.owner_phone_number
+        }
+      })
     } catch (err) {
+      console.error("Create Owner Error:", err)
       res.status(500).json({ message: err.message })
     }
   }
@@ -114,13 +141,33 @@ export class OwnerController {
         return res.status(400).json({ message: "Owner ID is required" })
       }
 
-      if (!owner_name || !owner_email || !owner_phone_number) {
-        return res.status(400).json({ message: "All fields are required" })
+      // Get current owner data
+      const currentOwner = await OwnerModel.getOwnerById(owner_id)
+      if (!currentOwner) {
+        return res.status(404).json({ message: "Owner not found" })
       }
 
-      const result = await OwnerModel.updateOwner(owner_id, owner_name, owner_email, owner_phone_number)
-      res.status(200).json({ message: "User updated successfully", data: result })
+      // Use provided values or keep existing ones
+      const name = owner_name || currentOwner.owner_name
+      const email = owner_email || currentOwner.owner_email
+      const phone = owner_phone_number || currentOwner.owner_phone_number
+      let imageUrl = currentOwner.owner_image_url
+
+      // If new image uploaded, save to Cloudinary
+      if (req.file) {
+        const cloudinaryResult = await uploadToCloudinary(req.file, "catatanhewanku/owners")
+        imageUrl = cloudinaryResult.secure_url
+      }
+
+      // Update all fields
+      await OwnerModel.updateOwnerFull(owner_id, name, email, phone, imageUrl)
+
+      res.status(200).json({ 
+        message: "User updated successfully",
+        data: { owner_id, owner_name: name, owner_email: email, owner_phone_number: phone, owner_image_url: imageUrl }
+      })
     } catch (err) {
+      console.error("Update Owner Error:", err)
       res.status(500).json({ message: err.message })
     }
   }
@@ -136,6 +183,34 @@ export class OwnerController {
       const result = await OwnerModel.deleteOwner(owner_id)
       res.status(200).json({ message: "User deleted successfully", data: result })
     } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  }
+
+  static async uploadOwnerImage(req, res) {
+    try {
+      const { owner_id } = req.params
+
+      if (!owner_id) {
+        return res.status(400).json({ message: "Owner ID is required" })
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" })
+      }
+
+      // Upload to Cloudinary in owners folder
+      const result = await uploadToCloudinary(req.file, "catatanhewanku/owners")
+
+      // Update owner with image URL
+      await OwnerModel.updateOwnerImage(owner_id, result.secure_url)
+
+      res.status(200).json({ 
+        message: "Image uploaded successfully",
+        image_url: result.secure_url
+      })
+    } catch (err) {
+      console.error("Upload Owner Image Error:", err)
       res.status(500).json({ message: err.message })
     }
   }

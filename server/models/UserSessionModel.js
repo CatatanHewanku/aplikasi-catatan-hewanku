@@ -39,21 +39,25 @@ export class UserSessionModel {
     return result.recordset[0]
   }
 
-  // Invalidate session by device (logout)
-  static async invalidateSessionByDevice(device_id) {
+  // Hard delete session by device (logout)
+  static async deleteSessionByDevice(device_id) {
     const connection = await dbConnection()
     const request = connection.request()
     
     request.input('device_id', sql.VarChar, device_id)
     
     await request.query(`
-      UPDATE UserSession
-      SET is_active = 0
-      WHERE device_id = @device_id AND is_active = 1
+      DELETE FROM UserSession
+      WHERE device_id = @device_id
     `)
     
     await connection.close()
     return { success: true }
+  }
+
+  // Invalidate session by device (logout) - kept for backwards compatibility
+  static async invalidateSessionByDevice(device_id) {
+    return this.deleteSessionByDevice(device_id)
   }
 
   // Verify token is from active session on that device

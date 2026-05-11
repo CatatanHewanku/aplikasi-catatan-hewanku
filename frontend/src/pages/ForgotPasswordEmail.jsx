@@ -1,8 +1,9 @@
 import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image} from "@chakra-ui/react";
 import { MdArrowBack, MdEmail} from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import Logo from "../images/Logo.jpeg";
 import { useState } from "react";
+import { authService } from "../services/authService";
+import Logo from "../images/Logo.jpeg";
   
 export default function ForgotPasswordPhone(){
     const navigate = useNavigate();
@@ -10,25 +11,47 @@ export default function ForgotPasswordPhone(){
 
     const [error, setError] = useState("");
   
-    const handleSendOtp = () => {
+    const handleSendOtp = async () => {
+      // Validation
+      if(!email.trim()){
+        setError("Email is required");
+        return;
+      }
+      if(!email.includes('@')){
+        setError("Invalid email format");
+        return;
+      }
 
-    const savedUser =
-        JSON.parse(localStorage.getItem("userProfile"));
+      setError("");
+
+      try {
+        // Try backend first
+        await authService.forgotPassword(email);
+        // If successful, go to OTP page
+        localStorage.setItem("resetEmail", email);
+        navigate("/otp-verification");
+      } catch (error) {
+        console.log("Backend forgot password failed:", error);
+        
+        // Fall back to localStorage check
+        const savedUser = JSON.parse(localStorage.getItem("userProfile")) || 
+                          JSON.parse(localStorage.getItem("owner"));
+        
         if(!savedUser){
           setError("No registered email found");
-         
           return;
         }
-      
-        if(savedUser.email !== email){
-          setError("Email is not registered");
         
+        if(savedUser.owner_email !== email && savedUser.email !== email){
+          setError("Email is not registered");
           return;
         }
-        setError("");
-      
+        
+        // If found in localStorage, still proceed to OTP
+        localStorage.setItem("resetEmail", email);
         navigate("/otp-verification");
-      };
+      }
+    };
     return(
       <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="70px" >
         <Box position="relative" bg="white" w="100%" maxW="380px" minH="650px" borderRadius="30px" px="28px" pt="75px" pb="40px" boxShadow="lg">

@@ -47,8 +47,7 @@ export class PasswordResetModel {
     request.input('owner_id', sql.Int, owner_id)
     
     await request.query(`
-      UPDATE PasswordReset
-      SET is_used = 1
+      DELETE FROM PasswordReset
       WHERE owner_id = @owner_id AND is_used = 0
     `)
     
@@ -81,6 +80,22 @@ export class PasswordResetModel {
     await request.query(`
       DELETE FROM PasswordReset
       WHERE token_expiry < GETDATE()
+    `)
+    
+    await connection.close()
+    return { success: true }
+  }
+
+  // Delete expired code by owner_id
+  static async deleteExpiredCodes(owner_id) {
+    const connection = await dbConnection()
+    const request = connection.request()
+    
+    request.input('owner_id', sql.Int, owner_id)
+    
+    await request.query(`
+      DELETE FROM PasswordReset
+      WHERE owner_id = @owner_id AND token_expiry < GETDATE()
     `)
     
     await connection.close()

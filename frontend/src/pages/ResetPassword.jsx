@@ -3,6 +3,7 @@ import { MdArrowBack, MdLock } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react"; 
 import Logo from "../images/Logo.jpeg";
+import { authService } from "../services/authService";
   
 export default function ResetPassword(){
   
@@ -14,32 +15,58 @@ export default function ResetPassword(){
       useState("");
   
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
   
-    const handleResetPassword = () => {
-  
-      if(password !== confirmPassword){
-  
-        setError("Password does not match");
-  
+    const handleResetPassword = async () => {
+      // Validation
+      if(!password){
+        setError("Password is required");
         return;
       }
-  
+      if(password.length < 6){
+        setError("Password must be at least 6 characters");
+        return;
+      }
+      if(password !== confirmPassword){
+        setError("Password does not match");
+        return;
+      }
+
       setError("");
-  
-      const savedUser =
-        JSON.parse(localStorage.getItem("userProfile"));
-  
-      const updatedUser = {
-        ...savedUser,
-        password
-      };
-  
-      localStorage.setItem(
-        "userProfile",
-        JSON.stringify(updatedUser)
-      );
-  
-      navigate("/");
+      setIsLoading(true);
+
+      try {
+        // Try backend first
+        const savedEmail = localStorage.getItem("resetEmail");
+        const savedCode = localStorage.getItem("resetCode");
+        
+        await authService.resetPassword(savedEmail, savedCode, password);
+        
+        // Clear reset data
+        localStorage.removeItem("resetEmail");
+        localStorage.removeItem("resetCode");
+        
+        navigate("/");
+      } catch (error) {
+        console.log("Backend reset password failed:", error);
+        
+        // Fall back to localStorage
+        const savedUser = JSON.parse(localStorage.getItem("userProfile"));
+        if(savedUser){
+          const updatedUser = { ...savedUser, password };
+          localStorage.setItem("userProfile", JSON.stringify(updatedUser));
+          
+          // Clear reset data
+          localStorage.removeItem("resetEmail");
+          localStorage.removeItem("resetCode");
+          
+          navigate("/");
+        } else {
+          setError(error?.message || "Password reset failed");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
   
     return(
@@ -83,8 +110,18 @@ export default function ResetPassword(){
           )}
 
           <Flex justify="center" mt="40px">
-            <Button w="80%" h="40px" bg="Primary.800" color="white" borderRadius="30px" fontSize="xl" _hover={{ opacity: 0.9 }} onClick={handleResetPassword} >
-              Save Password
+            <Button 
+              w="80%" 
+              h="40px" 
+              bg="Primary.800" 
+              color="white" 
+              borderRadius="30px" 
+              fontSize="xl" 
+              _hover={{ opacity: 0.9 }} 
+              onClick={handleResetPassword}
+              isDisabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save Password"}
             </Button>
           </Flex>
         </Box>

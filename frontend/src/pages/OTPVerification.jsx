@@ -2,6 +2,7 @@ import { Flex, Box, Text, Input, Button, Image } from "@chakra-ui/react";
 import { MdArrowBack } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { authService } from "../services/authService";
 import Logo from "../images/Logo.jpeg";
 
 export default function OtpVerification(){
@@ -12,7 +13,9 @@ export default function OtpVerification(){
 
     const [error, setError] = useState("");
 
-    const handleVerifyOtp = () => {
+    const [email, setEmail] = useState(localStorage.getItem("resetEmail") || "");
+
+    const handleVerifyOtp = async () => {
 
         if(!otp){
       
@@ -21,17 +24,26 @@ export default function OtpVerification(){
           return;
         }
      
-        if(otp.length < 4){
+        if(otp.length < 6){
       
-          setError("OTP must be 4 digits");
+          setError("OTP must be 6 digits");
       
           return;
         }
 
         setError("");
       
-        navigate("/reset-password");
-      };
+        try {
+            // Try backend first
+            const savedEmail = localStorage.getItem("resetEmail");
+            await authService.verifyCode(savedEmail, otp);
+            // If successful, go to reset password page
+            navigate("/reset-password");
+        } catch (error) {
+            console.log("Backend verify code failed:", error);
+            setError(error?.message || "Invalid OTP. Try again.");
+        }
+    };
 
 
 
@@ -56,11 +68,11 @@ export default function OtpVerification(){
                     </Text>
 
                     <Text textAlign="center" color="Primary.700" fontSize="sm" mb="32px" >
-                    Enter the 4 digit OTP sent
+                    Enter the 6 digit OTP sent
                     to your registered email.
                     </Text>
 
-                    <Input placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value) }textAlign="center" maxLength={4} fontSize="xl" letterSpacing="10px" bg="white" borderRadius="30px" border="1px" borderColor={ error ? "red.300" : "Primary.800" } boxShadow="md" _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }}/>
+                    <Input placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value) }textAlign="center" maxLength={6} fontSize="xl" letterSpacing="10px" bg="white" borderRadius="30px" border="1px" borderColor={ error ? "red.300" : "Primary.800" } boxShadow="md" _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }}/>
                         {error && (
                         <Text textAlign="center" color="red.400" fontSize="sm" mt="12px" >
                             {error}

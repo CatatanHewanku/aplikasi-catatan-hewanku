@@ -2,6 +2,7 @@ import { Flex, Box, Text, Input,Button, InputGroup, InputLeftElement, Image } fr
 import { MdPhone,  MdArrowBack } from "react-icons/md"; 
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";  
+import { authService } from "../services/authService";
 import Logo from "../images/Logo.jpeg";
   
 export default function ForgotPasswordPhone(){
@@ -9,27 +10,45 @@ export default function ForgotPasswordPhone(){
     const [phone, setPhone] = useState("");
 
     const [error, setError] = useState("");
-    const handleSendOtp = () => {
-
-    const savedUser =
-        JSON.parse(localStorage.getItem("userProfile"));
-    if(!savedUser){
-
-        setError("No registered account found");
-
+    const handleSendOtp = async () => {
+      // Validation
+      if(!phone.trim()){
+        setError("Phone number is required");
         return;
-    }
-
-    if(savedUser.phone !== phone){
-
-        setError("Phone number is not registered");
-
+      }
+      if(phone.length < 10){
+        setError("Valid phone number is required");
         return;
-    }
-        setError("");
-      
+      }
+
+      setError("");
+
+      try {
+        // Try backend first - use phone as identifier
+        await authService.forgotPassword(phone);
+        localStorage.setItem("resetEmail", phone); // Store as resetEmail for next step (works for both email and phone)
         navigate("/otp-verification");
-      };
+      } catch (error) {
+        console.log("Backend forgot password failed:", error);
+        
+        // Fall back to localStorage check
+        const savedUser = JSON.parse(localStorage.getItem("userProfile")) || 
+                          JSON.parse(localStorage.getItem("owner"));
+        
+        if(!savedUser){
+          setError("No registered account found");
+          return;
+        }
+        
+        if(savedUser.owner_phone_number !== phone && savedUser.phone !== phone){
+          setError("Phone number is not registered");
+          return;
+        }
+        
+        localStorage.setItem("resetEmail", phone);
+        navigate("/otp-verification");
+      }
+    };
   
     return(
         
