@@ -22,7 +22,18 @@ export class PetModel {
     `)
     
     await connection.close()
-    return result.recordset[0]
+    
+    // Return full pet data including image
+    return {
+      pet_id: result.recordset[0].pet_id,
+      owner_id,
+      pet_name,
+      pet_type,
+      pet_dob,
+      pet_gender,
+      pet_note,
+      pet_image: pet_image_url
+    }
   }
 
   // Get pet by ID

@@ -135,7 +135,7 @@ export class OwnerController {
   static async updateOwner(req, res) {
     try {
       const { owner_id } = req.params
-      const { owner_name, owner_email, owner_phone_number } = req.body
+      const { owner_name, owner_email, owner_phone_number, password } = req.body
 
       if (!owner_id) {
         return res.status(400).json({ message: "Owner ID is required" })
@@ -153,6 +153,22 @@ export class OwnerController {
       const phone = owner_phone_number || currentOwner.owner_phone_number
       let imageUrl = currentOwner.owner_image_url
 
+      // Check for duplicate email (if email is being changed)
+      if (email && email !== currentOwner.owner_email) {
+        const existingEmail = await OwnerModel.getOwnerByEmail(email)
+        if (existingEmail) {
+          return res.status(409).json({ message: "Email already registered" })
+        }
+      }
+
+      // Check for duplicate phone (if phone is being changed)
+      if (phone && phone !== currentOwner.owner_phone_number) {
+        const existingPhone = await OwnerModel.getOwnerByPhone(phone)
+        if (existingPhone) {
+          return res.status(409).json({ message: "Phone number already registered" })
+        }
+      }
+
       // If new image uploaded, save to Cloudinary
       if (req.file) {
         const cloudinaryResult = await uploadToCloudinary(req.file, "catatanhewanku/owners")
@@ -161,6 +177,12 @@ export class OwnerController {
 
       // Update all fields
       await OwnerModel.updateOwnerFull(owner_id, name, email, phone, imageUrl)
+
+      // Update password if provided
+      if (password) {
+        const hashedPassword = await bcrypt.hash(password, 10)
+        await OwnerModel.updatePassword(owner_id, hashedPassword)
+      }
 
       res.status(200).json({ 
         message: "User updated successfully",

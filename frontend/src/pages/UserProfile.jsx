@@ -19,6 +19,7 @@ export default function UserProfile(){
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [image, setImage] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
   
     useEffect(() => {
       // Get owner name from backend format first
@@ -75,18 +76,64 @@ export default function UserProfile(){
       }
     };
   
-    const handleSave = () => {
-      const updatedUser = {
-        firstName,
-        email,
-        phone,
-        password,
-        image
-      };
+    const handleSave = async () => {
+      setIsLoading(true);
+      try {
+        const ownerData = JSON.parse(localStorage.getItem("owner"));
+        if (!ownerData?.owner_id) {
+          alert("User not found");
+          setIsLoading(false);
+          return;
+        }
 
-      localStorage.setItem("userProfile", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      setIsEdit(false);
+        const updateData = {
+          owner_name: firstName,
+          owner_email: email,
+          owner_phone_number: phone
+        };
+
+        // Only include password if it was changed
+        if (password) {
+          updateData.password = password;
+        }
+
+        const response = await fetch(
+          `http://localhost:4000/api/owners/${ownerData.owner_id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updateData)
+          }
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // Update localStorage with new data
+          const updatedOwner = {
+            ...ownerData,
+            owner_name: firstName,
+            owner_email: email,
+            owner_phone_number: phone,
+            owner_image_url: image
+          };
+          localStorage.setItem("owner", JSON.stringify(updatedOwner));
+          
+          alert("Profile updated successfully");
+          setUser(updatedOwner);
+          setIsEdit(false);
+          setPassword(""); // Clear password field after save
+        } else {
+          alert(result.message || "Failed to update profile");
+        }
+      } catch (error) {
+        console.error("Save error:", error);
+        alert("Error updating profile");
+      } finally {
+        setIsLoading(false);
+      }
     };
   
     const handleLogout = async () => {
@@ -179,8 +226,8 @@ export default function UserProfile(){
   
           {isEdit && (
             <Flex justify="center" mt="40px" >
-              <Button w="80%" h="42px" bg="Primary.800" color="white" borderRadius="30px"fontSize="xl" _hover={{ opacity: 0.9 }} onClick={handleSave} >
-                Save
+              <Button w="80%" h="42px" bg="Primary.800" color="white" borderRadius="30px"fontSize="xl" _hover={{ opacity: 0.9 }} onClick={handleSave} isDisabled={isLoading} >
+                {isLoading ? "Saving..." : "Save"}
               </Button>
             </Flex>
           )}

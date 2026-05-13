@@ -20,56 +20,140 @@ export default function MyPet(){
     const [gender, setGender] = useState("");
     const [image, setImage] = useState("");
 
+    const [imagePreview, setImagePreview] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
     useEffect(() => {
-        const data = localStorage.getItem("pets");
-        if(data){
-            setPets(JSON.parse(data));
-        }
+        const fetchPets = async () => {
+            try {
+                const ownerData = JSON.parse(localStorage.getItem("owner"));
+                if (!ownerData?.owner_id) {
+                    console.log("No owner found");
+                    return;
+                }
+
+                const response = await fetch(`http://localhost:4000/api/pets/owner/${ownerData.owner_id}`);
+                const result = await response.json();
+
+                if (response.ok) {
+                    setPets(result.data || []);
+                    // Also save to localStorage as backup
+                    localStorage.setItem("pets", JSON.stringify(result.data || []));
+                } else {
+                    console.error("Failed to fetch pets:", result.message);
+                }
+            } catch (error) {
+                console.error("Error fetching pets:", error);
+            }
+        };
+
+        fetchPets();
     }, []);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if(!file) return;
+        
+        setImage(file); // Store the actual File object for FormData
+        
+        // Create preview
         const reader = new FileReader();
         reader.onloadend = () => {
-            setImage(reader.result);
+            setImagePreview(reader.result);
         };
         reader.readAsDataURL(file);
     };
 
-    const savePet = () => {
+    const savePet = async () => {
         if(!name) return;
-        const newPet = {
-            id: Date.now().toString(),
-            name,
-            dob,
-            type,
-            gender,
-            image: image || DefaultPet
-        };
+        setIsLoading(true);
+        
+        try {
+            const ownerData = JSON.parse(localStorage.getItem("owner"));
+            if (!ownerData?.owner_id) {
+                alert("User not found");
+                setIsLoading(false);
+                return;
+            }
 
-        const updated = [...pets, newPet];
-        setPets(updated);
-        localStorage.setItem("pets", JSON.stringify(updated));
-        setName("");
-        setDob("");
-        setType("");
-        setGender("");
-        setImage("");
-        setIsOpen(false);
+            const formData = new FormData();
+            formData.append('owner_id', ownerData.owner_id);
+            formData.append('pet_name', name);
+            formData.append('pet_dob', dob);
+            formData.append('pet_type', type);
+            formData.append('pet_gender', gender);
+            
+            // Add image file if selected
+            if (image) {
+                formData.append('pet_image', image);
+            }
+
+            const response = await fetch('http://localhost:4000/api/pets', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                const newPet = {
+                    pet_id: result.data.pet_id,
+                    pet_name: name,
+                    pet_dob: dob,
+                    pet_type: type,
+                    pet_gender: gender,
+                    pet_image: result.data.pet_image || DefaultPet
+                };
+
+                const updated = [...pets, newPet];
+                setPets(updated);
+                localStorage.setItem("pets", JSON.stringify(updated));
+                
+                alert("Pet added successfully");
+                setName("");
+                setDob("");
+                setType("");
+                setGender("");
+                setImage("");
+                setImagePreview("");
+                setIsOpen(false);
+            } else {
+                alert(result.message || "Failed to add pet");
+            }
+        } catch (error) {
+            console.error("Error saving pet:", error);
+            alert("Error adding pet");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const deletePet = (id) => {
-        const updated = pets.filter((pet) => pet.id !== id);
+    const deletePet = async (petId) => {
+        try {
+            const response = await fetch(`http://localhost:4000/api/pets/${petId}`, {
+                method: 'DELETE'
+            });
 
-        setPets(updated);
+            const result = await response.json();
 
-        localStorage.setItem("pets", JSON.stringify(updated));
+            if (response.ok) {
+                const updated = pets.filter((pet) => pet.pet_id !== petId);
+                setPets(updated);
+                localStorage.setItem("pets", JSON.stringify(updated));
+                alert("Pet deleted successfully");
+            } else {
+                alert(result.message || "Failed to delete pet");
+            }
+        } catch (error) {
+            console.error("Error deleting pet:", error);
+            alert("Error deleting pet");
+        }
     };
 
-    const filteredPets = pets.filter((pet) =>
-        pet.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredPets = pets.filter((pet) => {
+        const petName = pet?.pet_name;
+        return petName.toLowerCase().includes(search.toLowerCase());
+    });
 
     return(
         <Flex direction="column" minH="100vh" p="20px" >
@@ -88,23 +172,23 @@ export default function MyPet(){
 
             <Flex direction="column" gap={5}>
                 {filteredPets.map((pet)=> (
-                    <Flex key={pet.id} align="center" justify="space-between">
+                    <Flex key={pet.pet_id} align="center" justify="space-between">
                         <Flex align="center" gap={5} cursor="pointer" onClick={() => navigate(`/mypet/${pet.id}`)}>
-                            <Image src={pet.image || DefaultPet} boxSize="71px" borderRadius="full" objectFit="cover"/>
+                            <Image src={pet.pet_image || DefaultPet} boxSize="71px" borderRadius="full" objectFit="cover"/>
                             <Box>
                                 <Text fontFamily="heading"fontSize="xl"fontWeight="medium" color="Primary.900" >
-                                    {pet.name}
+                                    {pet.pet_name}
                                 </Text>
 
                                 <Text fontFamily="body" fontSize="lg" color="Primary.800" >
-                                    {pet.type || "-"}
+                                    {pet.pet_type}
                                 </Text>
                             </Box>
 
                         </Flex>
 
                         {isEdit && (
-                            <Button size="sm" colorScheme="red" onClick={() => deletePet(pet.id)} >
+                            <Button size="sm" colorScheme="red" onClick={() => deletePet(pet.pet_id)} >
                                 Delete
                             </Button>
                         )}
@@ -143,6 +227,7 @@ export default function MyPet(){
                     </ModalHeader>
                     <ModalBody>
                         <Flex direction="column" gap={3}>
+                            {imagePreview && <Image src={imagePreview} boxSize="100px" borderRadius="8px" />}
                             <Input type="file" accept="image/*" onChange={handleImageUpload}/>
                             <Input placeholder="Name" value={name} onChange={(e)=>setName(e.target.value)}/>
                             <Input type="date"value={dob}onChange={(e)=>setDob(e.target.value)}/>
@@ -164,8 +249,8 @@ export default function MyPet(){
                         <Button mr={3} onClick={() => setIsOpen(false)} bg="Neutral.100" boxShadow="md" border="1px" borderColor="Primary.800">
                             Cancel
                         </Button>
-                        <Button bg="Primary.800" color="white" onClick={savePet} boxShadow="md">
-                            Save
+                        <Button bg="Primary.800" color="white" onClick={savePet} boxShadow="md" isDisabled={isLoading}>
+                            {isLoading ? "Saving..." : "Save"}
                         </Button>
                     </ModalFooter>
                 </ModalContent>
