@@ -3,14 +3,15 @@ import { uploadToCloudinary, deleteFromCloudinary } from "../config/cloudinary.j
 
 const VALID_CONSULTATION_TYPES = [
   'Vaccination',
-  'Checkup',
+  'General Check Up',
+  'Dental Care',
+  'Parasite Control',
+  'Nutrition',
   'Illness/Treatment',
   'Surgery',
   'Prescription Refill',
   'Follow-up',
-  'Dental Care',
-  'Emergency',
-  'Consultation'
+  'Emergency'
 ]
 
 export class MedicalRecordController {

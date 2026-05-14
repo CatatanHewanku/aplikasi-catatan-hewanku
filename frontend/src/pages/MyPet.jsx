@@ -173,7 +173,7 @@ export default function MyPet(){
             <Flex direction="column" gap={5}>
                 {filteredPets.map((pet)=> (
                     <Flex key={pet.pet_id} align="center" justify="space-between">
-                        <Flex align="center" gap={5} cursor="pointer" onClick={() => navigate(`/mypet/${pet.id}`)}>
+                        <Flex align="center" gap={5} cursor="pointer" onClick={() => navigate(`/mypet/${pet.pet_id}`)}>
                             <Image src={pet.pet_image || DefaultPet} boxSize="71px" borderRadius="full" objectFit="cover"/>
                             <Box>
                                 <Text fontFamily="heading"fontSize="xl"fontWeight="medium" color="Primary.900" >
