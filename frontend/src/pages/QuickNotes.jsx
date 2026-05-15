@@ -1,10 +1,10 @@
 import { Flex, Box, Text, Input, Textarea, Select, Button, Image } from "@chakra-ui/react";
-import { MdArrowBack, MdOutlinePhotoCamera} from "react-icons/md";
+import { MdArrowBack, MdOutlinePhotoCamera } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DefaultPet from "../images/defaultPet.jpeg";
 
-export default function QuickNotes(){
+export default function QuickNotes() {
   const navigate = useNavigate();
   const [pets, setPets] = useState([]);
 
@@ -39,7 +39,7 @@ export default function QuickNotes(){
 
     setSelectedPet(value);
 
-    if(value === "new"){
+    if (value === "new") {
       setIsNewPet(true);
     } else {
       setIsNewPet(false);
@@ -50,7 +50,7 @@ export default function QuickNotes(){
 
     const file = e.target.files[0];
 
-    if(!file) return;
+    if (!file) return;
 
     const reader = new FileReader();
 
@@ -65,7 +65,7 @@ export default function QuickNotes(){
 
     const file = e.target.files[0];
 
-    if(!file) return;
+    if (!file) return;
 
     const reader = new FileReader();
 
@@ -78,13 +78,13 @@ export default function QuickNotes(){
 
   const handleSubmit = () => {
 
-    if(!date || !type) return;
+    if (!date || !type) return;
 
     let petId = selectedPet;
 
-    if(isNewPet){
+    if (isNewPet) {
 
-      if(!name) return;
+      if (!name) return;
 
       const allPets =
         JSON.parse(localStorage.getItem("pets")) || [];
@@ -123,7 +123,7 @@ export default function QuickNotes(){
       photo
     };
 
-    if(!allLogs[petId]){
+    if (!allLogs[petId]) {
       allLogs[petId] = [];
     }
 
@@ -136,11 +136,11 @@ export default function QuickNotes(){
     navigate(`/mypet/${petId}`);
   };
 
-  return(
+  return (
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px" >
       <Flex justify="flex-end">
         <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} >
-          <MdArrowBack size="28px"/>
+          <MdArrowBack size="28px" />
         </Box>
       </Flex>
 
@@ -165,16 +165,16 @@ export default function QuickNotes(){
         </option>
       </Select>
 
-        {isNewPet && (
+      {isNewPet && (
         <Flex direction="column" gap={4}>
           <Flex align="center" gap={3}>
             <Box as="label">
-              <Input type="file" accept="image/*" display="none" onChange={handlePetImage}/>
+              <Input type="file" accept="image/*" display="none" onChange={handlePetImage} />
               <Flex w="70px" h="70px" borderRadius="full" overflow="hidden" bg="Primary.100" align="center" justify="center">
                 {petImage ? (
-                  <Image src={petImage} w="100%" h="100%" objectFit="cover"/>
+                  <Image src={petImage} w="100%" h="100%" objectFit="cover" />
                 ) : (
-                  <MdOutlinePhotoCamera size="28px"/>
+                  <MdOutlinePhotoCamera size="28px" />
                 )}
               </Flex>
             </Box>
@@ -195,7 +195,7 @@ export default function QuickNotes(){
               DOB
             </Text>
 
-            <Input type="date" bg="white" borderColor="Primary.800" value={dob} onChange={(e) => setDob(e.target.value)}/>
+            <Input type="date" bg="white" borderColor="Primary.800" value={dob} onChange={(e) => setDob(e.target.value)} />
           </Box>
 
           <Select bg="white" borderColor="Primary.800" color="Primary.800" value={typePet} onChange={(e) => setTypePet(e.target.value)}>
@@ -222,34 +222,27 @@ export default function QuickNotes(){
             </option>
           </Select>
         </Flex>
-        )}
+      )}
 
       <Select bg="white" borderColor="Primary.800" color="Primary.800" value={type} onChange={(e) => setType(e.target.value)}>
-        <option value="">
-          Consultation Type
-        </option>
-        <option value="Vaccination">
-          Vaccination
-        </option>
-        <option value="General Check Up">
-          General Check Up
-        </option>
-        <option value="Dental Care">
-          Dental Care
-        </option>
-        <option value="Parasite Control">
-          Parasite Control
-        </option>
-        <option value="Nutrition">
-          Nutrition
-        </option>
+        <option value="">Consultation Type</option>
+        <option value="Vaccination">Vaccination</option>
+        <option value="General Check Up">General Check Up</option>
+        <option value="Dental Care">Dental Care</option>
+        <option value="Parasite Control">Parasite Control</option>
+        <option value="Nutrition">Nutrition</option>
+        <option value="Illness/Treatment">Illness/Treatment</option>
+        <option value="Surgery">Surgery</option>
+        <option value="Prescription Refill">Prescription Refill</option>
+        <option value="Follow-up">Follow-up</option>
+        <option value="Emergency">Emergency</option>
       </Select>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px" flex="1">
         <Text mb="6px" color="Primary.800" fontSize="sm">
           Examination Date
         </Text>
-        <Input type="date" bg="Primary.100"  color="Primary.800" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input type="date" bg="Primary.100" color="Primary.800" value={date} onChange={(e) => setDate(e.target.value)} />
       </Box>
 
       <Flex gap={4}>
@@ -257,14 +250,14 @@ export default function QuickNotes(){
           <Text mb="6px" color="Primary.800">
             Weight
           </Text>
-          <Input bg="Primary.100" border="none" value={weight} onChange={(e) => setWeight(e.target.value)}/>
+          <Input bg="Primary.100" border="none" value={weight} onChange={(e) => setWeight(e.target.value)} />
         </Box>
 
         <Box bg="Primary.200" p="12px" borderRadius="10px" flex="1">
           <Text mb="6px" color="Primary.800">
             Temperature
           </Text>
-          <Input bg="Primary.100" border="none" value={temperature} onChange={(e) => setTemperature(e.target.value)}/>
+          <Input bg="Primary.100" border="none" value={temperature} onChange={(e) => setTemperature(e.target.value)} />
         </Box>
       </Flex>
 
@@ -272,14 +265,14 @@ export default function QuickNotes(){
         <Text mb="6px" color="Primary.800">
           Veterinarian
         </Text>
-        <Input bg="Primary.100" border="none" value={vet} onChange={(e) => setVet(e.target.value)}/>
+        <Input bg="Primary.100" border="none" value={vet} onChange={(e) => setVet(e.target.value)} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px">
         <Text mb="6px" color="Primary.800">
           Veterinary Clinic
         </Text>
-        <Input bg="Primary.100" border="none"value={clinic} onChange={(e) => setClinic(e.target.value)} />
+        <Input bg="Primary.100" border="none" value={clinic} onChange={(e) => setClinic(e.target.value)} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px">
@@ -295,9 +288,9 @@ export default function QuickNotes(){
       </Box>
       <Flex align="center" gap={3}>
         <Box as="label" cursor="pointer">
-          <Input type="file" accept="image/*" display="none" onChange={handlePhoto}/>
+          <Input type="file" accept="image/*" display="none" onChange={handlePhoto} />
           <Flex w="50px" h="50px" borderRadius="10px" border="1px" borderColor="Primary.800" bg="white" align="center" justify="center" color="Primary.800">
-            <MdOutlinePhotoCamera size="24px"/>
+            <MdOutlinePhotoCamera size="24px" />
           </Flex>
         </Box>
 
@@ -312,7 +305,7 @@ export default function QuickNotes(){
         </Box>
       </Flex>
 
-      <Button mt="4" bg="Primary.800" color="white" borderRadius="30px" h="50px" fontSize="xl" _hover={{opacity: 0.9}}onClick={handleSubmit}>
+      <Button mt="4" bg="Primary.800" color="white" borderRadius="30px" h="50px" fontSize="xl" _hover={{ opacity: 0.9 }} onClick={handleSubmit}>
         Submit
       </Button>
     </Flex>

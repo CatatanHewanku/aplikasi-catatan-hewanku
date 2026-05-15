@@ -1,6 +1,9 @@
 import cron from 'node-cron'
 import { VetClinicModel } from '../models/VetClinicModel.js'
 import { searchVetClinicsGoogle, getBoundingBox } from './googlePlacesSearch.js'
+import { cloudinary } from '../config/cloudinary.js'
+import { Readable } from "stream"
+import axios from "axios"
 
 // Bekasi area only (using city name for geocoding)
 const INDONESIAN_CITIES = [
@@ -11,6 +14,40 @@ const INDONESIAN_CITIES = [
 const cacheMetadata = new Map()
 
 /**
+ * Download photo from Google and upload to Cloudinary
+ */
+async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
+  try {
+    if (!photoReference) return null
+
+    const googlePhotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+    
+    const response = await axios.get(googlePhotoUrl, { responseType: 'arraybuffer' })
+    const buffer = Buffer.from(response.data)
+    
+    const cloudinaryResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { 
+          folder: 'catatanhewanku/vet-clinics',
+          public_id: `${clinicName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)}_${Date.now()}`,
+          resource_type: 'auto'
+        },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      )
+      Readable.from([buffer]).pipe(uploadStream)
+    })
+    
+    return cloudinaryResult.secure_url
+  } catch (err) {
+    console.error("Error downloading/uploading clinic photo:", err.message)
+    return null
+  }
+}
+
+/**
  * Auto-sync clinics from Google Places to database
  * Searches all major Indonesian cities and saves results
  */
@@ -18,6 +55,7 @@ export const syncClinicsFromGoogle = async () => {
   console.log('🔄 Starting Google Places auto-sync...')
   let totalClinicsSaved = 0
   let totalClinicsFailed = 0
+  let totalPhotosUploaded = 0
 
   for (const city of INDONESIAN_CITIES) {
     try {
@@ -43,6 +81,7 @@ export const syncClinicsFromGoogle = async () => {
       for (const clinic of clinics) {
         try {
           const exists = await VetClinicModel.clinicExistsByPlaceId(clinic.place_id)
+          let clinicId = null
 
           if (exists) {
             // Update existing clinic with latest info from Google
@@ -53,22 +92,42 @@ export const syncClinicsFromGoogle = async () => {
               clinic.clinic_latitude,
               clinic.clinic_longitude,
               clinic.phone,
-              clinic.clinic_photo_url
+              clinic.clinic_photo_reference
             )
             console.log(`  ✏️ Updated: ${clinic.clinic_name}`)
+            
+            // Get clinic_id for photo upload
+            const existingClinics = await VetClinicModel.getAllClinics()
+            clinicId = existingClinics.find(c => c.place_id === clinic.place_id)?.clinic_id
           } else {
             // Create new clinic
-            await VetClinicModel.createClinic(
+            const result = await VetClinicModel.createClinic(
               clinic.clinic_name,
               clinic.clinic_address,
               clinic.clinic_latitude,
               clinic.clinic_longitude,
               clinic.phone,
               clinic.place_id,
-              clinic.clinic_photo_url
+              clinic.clinic_photo_reference
             )
+            clinicId = result.clinic_id
             totalClinicsSaved++
             console.log(`  ✅ Created: ${clinic.clinic_name}`)
+          }
+
+          // Download and upload photo to Cloudinary if photo reference exists
+          if (clinic.clinic_photo_reference && clinicId) {
+            console.log(`  📸 Uploading photo for ${clinic.clinic_name}...`)
+            const cloudinaryUrl = await downloadAndUploadClinicPhoto(
+              clinic.clinic_photo_reference,
+              clinic.clinic_name
+            )
+            
+            if (cloudinaryUrl) {
+              await VetClinicModel.updateClinicPhotoUrl(clinicId, cloudinaryUrl)
+              totalPhotosUploaded++
+              console.log(`  ✅ Photo uploaded to Cloudinary for ${clinic.clinic_name}`)
+            }
           }
         } catch (err) {
           console.error(`  Failed to save ${clinic.clinic_name}:`, err.message)
@@ -79,7 +138,7 @@ export const syncClinicsFromGoogle = async () => {
       // Mark city as synced
       cacheMetadata.set(city.name, {
         lastSync: new Date(),
-        nextSync: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        nextSync: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         clinicCount: clinics.length
       })
 
@@ -93,12 +152,14 @@ export const syncClinicsFromGoogle = async () => {
   console.log(`
 ✅ Sync Complete!
    Saved: ${totalClinicsSaved} new clinics
+   Photos uploaded: ${totalPhotosUploaded}
    Failed: ${totalClinicsFailed}
    Next sync: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleString()}
   `)
 
   return {
     saved: totalClinicsSaved,
+    photos_uploaded: totalPhotosUploaded,
     failed: totalClinicsFailed,
     timestamp: new Date(),
     nextSync: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -107,12 +168,9 @@ export const syncClinicsFromGoogle = async () => {
 
 /**
  * Check if cache needs refresh
- * @param {string} cityName - City name to check
- * @returns {boolean} True if needs refresh
  */
 export const isCacheExpired = (cityName = null) => {
   if (!cityName) {
-    // Check if ANY city cache is expired
     for (const [city, meta] of cacheMetadata) {
       if (new Date() > meta.nextSync) {
         return true
@@ -122,7 +180,7 @@ export const isCacheExpired = (cityName = null) => {
   }
 
   const meta = cacheMetadata.get(cityName)
-  if (!meta) return true // Never synced = expired
+  if (!meta) return true
 
   return new Date() > meta.nextSync
 }
@@ -146,12 +204,10 @@ export const getCacheStatus = () => {
 
 /**
  * Setup cron job for automatic 30-day refresh
- * Runs at 2 AM UTC (9 AM Jakarta time) every 30 days
  */
 export const setupSyncCron = () => {
   console.log('⏰ Setting up auto-sync cron job...')
 
-  // Run every 30 days at 2 AM UTC
   cron.schedule('0 2 1 * *', async () => {
     console.log('⏰ Cron triggered: Starting 30-day clinic data refresh')
     try {
@@ -163,14 +219,13 @@ export const setupSyncCron = () => {
 
   console.log('✅ Cron job scheduled: Syncs every 30 days at 2 AM UTC')
 
-  // Optional: Also sync on first startup (comment out if you prefer manual)
   syncClinicsFromGoogle().catch(err => {
     console.error('❌ Initial sync failed:', err.message)
   })
 }
 
 /**
- * Manual trigger for sync (useful for testing)
+ * Manual trigger for sync
  */
 export const manualSync = async () => {
   console.log('🔄 Manual sync triggered...')

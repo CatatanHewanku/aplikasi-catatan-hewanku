@@ -10,10 +10,6 @@ router.get("/search", VetClinicController.searchClinics)
 router.get("/:clinic_id", VetClinicController.getClinic)
 router.patch("/:clinic_id", VetClinicController.updateClinic)
 
-// OpenStreetMap (fallback search)
-router.post("/search/osm", VetClinicController.searchOSMClinics)
-router.post("/save/osm", VetClinicController.saveOSMClinic)
-
 // Admin: Quota monitoring & manual sync
 router.get("/quota/info", VetClinicController.getQuota)
 router.post("/sync/manual", VetClinicController.manualSyncGoogle)

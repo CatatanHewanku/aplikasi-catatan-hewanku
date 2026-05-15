@@ -145,11 +145,10 @@ export const searchVetClinicsGoogle = async (bounds) => {
 
     // Transform Google data to our format
     let allClinics = response.data.results.map((place) => {
-      // Get first photo URL (if available)
-      let photoUrl = null
+      // Get first photo reference (if available)
+      let photoReference = null
       if (place.photos && place.photos.length > 0) {
-        const photoReference = place.photos[0].photo_reference
-        photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
+        photoReference = place.photos[0].photo_reference
       }
 
       return {
@@ -158,7 +157,7 @@ export const searchVetClinicsGoogle = async (bounds) => {
         clinic_latitude: place.geometry.location.lat,
         clinic_longitude: place.geometry.location.lng,
         place_id: place.place_id,
-        clinic_photo_url: photoUrl,
+        clinic_photo_reference: photoReference,
         phone: place.formatted_phone_number || place.international_phone_number || null,
         website: place.website || null,
         email: null,
@@ -186,11 +185,10 @@ export const searchVetClinicsGoogle = async (bounds) => {
 
       if (nextResponse.data.status === 'OK') {
         const nextClinics = nextResponse.data.results.map((place) => {
-          // Get first photo URL (if available)
-          let photoUrl = null
+          // Get first photo reference (if available)
+          let photoReference = null
           if (place.photos && place.photos.length > 0) {
-            const photoReference = place.photos[0].photo_reference
-            photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
+            photoReference = place.photos[0].photo_reference
           }
 
           return {
@@ -199,7 +197,7 @@ export const searchVetClinicsGoogle = async (bounds) => {
             clinic_latitude: place.geometry.location.lat,
             clinic_longitude: place.geometry.location.lng,
             place_id: place.place_id,
-            clinic_photo_url: photoUrl,
+            clinic_photo_reference: photoReference,
             phone: place.formatted_phone_number || place.international_phone_number || null,
             website: place.website || null,
             email: null,

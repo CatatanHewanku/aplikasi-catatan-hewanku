@@ -1,15 +1,12 @@
 import { VetClinicModel } from "../models/VetClinicModel.js"
-import { searchVetClinicsOSM } from "../services/osmSearch.js"
 import { getQuotaInfo, getEstimatedCost } from "../services/googlePlacesSearch.js"
 import { getCacheStatus, manualSync } from "../services/syncService.js"
-import { uploadToCloudinary } from "../config/cloudinary.js"
+import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js"
 import { Readable } from "stream"
 import axios from "axios"
 
-// Helper: Generate Google Maps URL from place_id
 const getGoogleMapsUrl = (placeId) => `https://www.google.com/maps/place/?q=place_id:${placeId}`
 
-// Helper: Download Google Place photo and upload to Cloudinary
 async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
   try {
     if (!photoReference) return null;
@@ -19,7 +16,6 @@ async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
     const response = await axios.get(googlePhotoUrl, { responseType: 'arraybuffer' });
     const buffer = Buffer.from(response.data);
     
-    // Upload to Cloudinary
     const cloudinaryResult = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
@@ -72,7 +68,6 @@ export class VetClinicController {
         return res.status(404).json({ message: "Clinic not found" })
       }
 
-      // Add generated Google Maps URL
       clinic.google_map_url = getGoogleMapsUrl(clinic.place_id)
 
       res.status(200).json({ message: "Clinic retrieved successfully", data: clinic })
@@ -85,11 +80,9 @@ export class VetClinicController {
     try {
       const clinics = await VetClinicModel.getAllClinics()
       
-      // Process each clinic to ensure it has a Cloudinary photo
       for (const clinic of clinics) {
         clinic.google_map_url = getGoogleMapsUrl(clinic.place_id);
         
-        // If no Cloudinary URL, download and upload the Google photo
         if (!clinic.clinic_photo_cloudinary_url && clinic.clinic_photo_reference) {
           const cloudinaryUrl = await downloadAndUploadClinicPhoto(
             clinic.clinic_photo_reference,
@@ -97,7 +90,6 @@ export class VetClinicController {
           );
           
           if (cloudinaryUrl) {
-            // Save to database
             await VetClinicModel.updateClinicPhotoUrl(clinic.clinic_id, cloudinaryUrl);
             clinic.clinic_photo_cloudinary_url = cloudinaryUrl;
           }
@@ -120,7 +112,6 @@ export class VetClinicController {
 
       const clinics = await VetClinicModel.searchClinics(search_term)
       
-      // Add generated Google Maps URLs
       clinics.forEach(clinic => {
         clinic.google_map_url = getGoogleMapsUrl(clinic.place_id)
       })
@@ -147,63 +138,6 @@ export class VetClinicController {
       const result = await VetClinicModel.updateClinic(clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone)
       res.status(200).json({ message: "Clinic updated successfully", data: result })
     } catch (err) {
-      res.status(500).json({ message: err.message })
-    }
-  }
-
-  static async searchOSMClinics(req, res) {
-    try {
-      const { latitude, longitude, radius = 5 } = req.body
-
-      if (!latitude || !longitude) {
-        return res.status(400).json({ message: "Latitude and longitude are required" })
-      }
-
-      const clinics = await searchVetClinicsOSM(latitude, longitude, radius)
-
-      res.status(200).json({
-        message: "Clinics found from OpenStreetMap",
-        data: clinics,
-        attribution: "Map data © OpenStreetMap contributors (ODbL License)"
-      })
-    } catch (err) {
-      console.error("OSM Search Error:", err)
-      res.status(500).json({ message: err.message })
-    }
-  }
-
-  static async saveOSMClinic(req, res) {
-    try {
-      const { clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_url, place_id } = req.body
-
-      if (!clinic_name || !clinic_address || !clinic_latitude || !clinic_longitude || !place_id) {
-        return res.status(400).json({ message: "Required fields are missing" })
-      }
-
-      const existingClinics = await VetClinicModel.getAllClinics()
-      const exists = existingClinics.some(c => c.place_id === place_id)
-
-      if (exists) {
-        return res.status(409).json({ message: "Clinic already saved" })
-      }
-
-      const result = await VetClinicModel.createClinic(
-        clinic_name,
-        clinic_address,
-        clinic_latitude,
-        clinic_longitude,
-        clinic_phone,
-        place_id,
-        clinic_photo_url
-      )
-
-      res.status(201).json({
-        message: "Clinic saved successfully",
-        data: result,
-        attribution: "Data sourced from OpenStreetMap contributors (ODbL License)"
-      })
-    } catch (err) {
-      console.error("Save Clinic Error:", err)
       res.status(500).json({ message: err.message })
     }
   }

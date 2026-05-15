@@ -3,7 +3,7 @@ import { dbConnection } from "../config/connection.js"
 
 export class VetClinicModel {
   // Create new clinic
-  static async createClinic(clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, place_id, clinic_photo_url = null) {
+  static async createClinic(clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, place_id, clinic_photo_reference = null) {
     const connection = await dbConnection()
     const request = connection.request()
     
@@ -13,11 +13,11 @@ export class VetClinicModel {
     request.input('clinic_longitude', sql.Decimal(11, 8), clinic_longitude)
     request.input('clinic_phone', sql.VarChar, clinic_phone || null)
     request.input('place_id', sql.VarChar, place_id)
-    request.input('clinic_photo_url', sql.VarChar(sql.MAX), clinic_photo_url || null)
+    request.input('clinic_photo_reference', sql.VarChar(sql.MAX), clinic_photo_reference || null)
     
     const result = await request.query(`
-      INSERT INTO VetClinic (clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, place_id, clinic_photo_url)
-      VALUES (@clinic_name, @clinic_address, @clinic_latitude, @clinic_longitude, @clinic_phone, @place_id, @clinic_photo_url)
+      INSERT INTO VetClinic (clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, place_id, clinic_photo_reference)
+      VALUES (@clinic_name, @clinic_address, @clinic_latitude, @clinic_longitude, @clinic_phone, @place_id, @clinic_photo_reference)
       SELECT SCOPE_IDENTITY() as clinic_id
     `)
     
@@ -33,7 +33,7 @@ export class VetClinicModel {
     request.input('clinic_id', sql.Int, clinic_id)
     
     const result = await request.query(`
-      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_url, place_id, created_at
+      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_cloudinary_url, clinic_photo_reference, place_id, created_at
       FROM VetClinic
       WHERE clinic_id = @clinic_id
     `)
@@ -48,7 +48,7 @@ export class VetClinicModel {
     const request = connection.request()
     
     const result = await request.query(`
-      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_url, place_id, created_at
+      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_cloudinary_url, clinic_photo_reference, place_id, created_at
       FROM VetClinic
       ORDER BY clinic_name ASC
     `)
@@ -65,7 +65,7 @@ export class VetClinicModel {
     request.input('search_term', sql.VarChar, `%${search_term}%`)
     
     const result = await request.query(`
-      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_url, place_id, created_at
+      SELECT clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_cloudinary_url, clinic_photo_reference, place_id, created_at
       FROM VetClinic
       WHERE clinic_name LIKE @search_term OR clinic_address LIKE @search_term
       ORDER BY clinic_name ASC
@@ -76,7 +76,7 @@ export class VetClinicModel {
   }
 
   // Update clinic by place_id (used for sync updates)
-  static async updateClinicByPlaceId(place_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_url) {
+  static async updateClinicByPlaceId(place_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_reference) {
     const connection = await dbConnection()
     const request = connection.request()
     
@@ -86,11 +86,11 @@ export class VetClinicModel {
     request.input('clinic_latitude', sql.Decimal(10, 8), clinic_latitude)
     request.input('clinic_longitude', sql.Decimal(11, 8), clinic_longitude)
     request.input('clinic_phone', sql.VarChar, clinic_phone || null)
-    request.input('clinic_photo_url', sql.VarChar(sql.MAX), clinic_photo_url || null)
+    request.input('clinic_photo_reference', sql.VarChar(sql.MAX), clinic_photo_reference || null)
     
     const result = await request.query(`
       UPDATE VetClinic
-      SET clinic_name = @clinic_name, clinic_address = @clinic_address, clinic_latitude = @clinic_latitude, clinic_longitude = @clinic_longitude, clinic_phone = @clinic_phone, clinic_photo_url = @clinic_photo_url
+      SET clinic_name = @clinic_name, clinic_address = @clinic_address, clinic_latitude = @clinic_latitude, clinic_longitude = @clinic_longitude, clinic_phone = @clinic_phone, clinic_photo_reference = @clinic_photo_reference
       WHERE place_id = @place_id
     `)
     
@@ -113,7 +113,7 @@ export class VetClinicModel {
     return result.recordset.length > 0
   }
 
-  // Update clinic photo URL
+  // Update clinic Cloudinary photo URL
   static async updateClinicPhotoUrl(clinic_id, cloudinaryUrl) {
     const connection = await dbConnection()
     const request = connection.request()
