@@ -46,7 +46,7 @@ export class MedicalRecordController {
       let imageUrl = null
       if (file) {
         try {
-          const result = await uploadToCloudinary(file, 'medical-records')
+          const result = await uploadToCloudinary(file, 'catatanhewanku/medical-records')
           imageUrl = result.secure_url
         } catch (err) {
           return res.status(500).json({ message: `Image upload failed: ${err.message}` })
@@ -177,7 +177,7 @@ export class MedicalRecordController {
             await deleteFromCloudinary(existingRecord.record_image)
           }
           // Upload new image
-          const result = await uploadToCloudinary(file, 'medical-records')
+          const result = await uploadToCloudinary(file, 'catatanhewanku/medical-records')
           imageUrl = result.secure_url
         } catch (err) {
           return res.status(500).json({ message: `Image upload failed: ${err.message}` })

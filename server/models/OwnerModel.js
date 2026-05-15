@@ -16,7 +16,7 @@ export class OwnerModel {
     const result = await request.query(`
       INSERT INTO PetOwner (owner_name, owner_email, owner_password_hash, owner_phone_number, owner_image_url)
       VALUES (@owner_name, @owner_email, @owner_password_hash, @owner_phone_number, @owner_image_url)
-      SELECT SCOPE_IDENTITY() as owner_id
+      SELECT CAST(SCOPE_IDENTITY() as INT) as owner_id, @owner_name as owner_name, @owner_email as owner_email, @owner_phone_number as owner_phone_number
     `)
 
     await connection.close()

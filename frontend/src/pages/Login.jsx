@@ -5,19 +5,15 @@ import { useState } from "react";
 import Logo from "../images/Logo.jpeg";
 import { authService } from "../services/authService";
 
-
 export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    // Validation
-    if (!email.trim()) {
+    if (!identifier.trim()) {
       setError("Email or phone is required");
       return;
     }
@@ -28,33 +24,12 @@ export default function Login() {
 
     setError("");
 
-    // Try backend first
     try {
-      console.log("Calling authService.login...");
-      await authService.login(email, password);
-      console.log("Backend login success");
+      await authService.login(identifier, password);
       window.location.href = "/";
-      return;
     } catch (backendError) {
-      console.log("Backend login failed:", backendError);
-      setError(backendError?.message || "Invalid email or password");
+      setError("Invalid email or password");
     }
-
-    // Fall back to localStorage
-    const savedUser = JSON.parse(localStorage.getItem("userProfile"));
-
-    if (!savedUser) {
-      setError("Wrong email or password");
-      return;
-    }
-
-    if (savedUser.email !== email || savedUser.password !== password) {
-      setError("Wrong email or password");
-      return;
-    }
-
-    localStorage.setItem("isLogin", "true");
-    window.location.href = "/";
   };
 
   return (
@@ -76,19 +51,48 @@ export default function Login() {
           <InputLeftElement pointerEvents="none" color="Primary.800">
             <Box color="Primary.800">
               <MdEmail size="20px" />
-            </Box >
+            </Box>
           </InputLeftElement>
-          <Input placeholder="Email" fontSize="md" fontFamily="body" fontWeight="regular" color="Primary.800" value={email} onChange={(e) => setEmail(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+          <Input 
+            placeholder="Email or Phone" 
+            fontSize="md" 
+            fontFamily="body" 
+            fontWeight="regular" 
+            color="Primary.800" 
+            value={identifier} 
+            onChange={(e) => setIdentifier(e.target.value)} 
+            bg="white" 
+            borderRadius="30px" 
+            border="1px" 
+            borderColor="Primary.800" 
+            boxShadow="md" 
+            _focus={{ borderColor: "Primary.800", boxShadow: "md" }} 
+          />
         </InputGroup>
 
         <InputGroup>
           <InputLeftElement pointerEvents="none" color="Primary.800">
-            <Box color="Primary.800" >
+            <Box color="Primary.800">
               <MdLock size="20px" />
             </Box>
           </InputLeftElement>
-          <Input type="password" fontSize="md" fontFamily="body" fontWeight="regular" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor={error ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }} />
+          <Input 
+            type="password" 
+            fontSize="md" 
+            fontFamily="body" 
+            fontWeight="regular" 
+            placeholder="Password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            bg="white" 
+            borderRadius="30px" 
+            border="1px" 
+            borderColor={error ? "red.300" : "Primary.800"} 
+            boxShadow="md" 
+            _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }} 
+          />
         </InputGroup>
+
         {error && (
           <Text color="red.400" fontSize="xs" mt="6px" ml="8px">
             {error}
@@ -100,23 +104,44 @@ export default function Login() {
         </Text>
 
         <Flex align="center" direction="column">
-          <Button mt="40px" w="80%" h="40px" bg="Primary.800" color="Neutral.100" borderRadius="30px" fontWeight="medium" boxShadow="md" _hover={{ opacity: 0.9 }} onClick={handleLogin}>
+          <Button 
+            mt="40px" 
+            w="80%" 
+            h="40px" 
+            bg="Primary.800" 
+            color="Neutral.100" 
+            borderRadius="30px" 
+            fontWeight="medium" 
+            boxShadow="md" 
+            _hover={{ opacity: 0.9 }} 
+            onClick={handleLogin}
+          >
             <Text fontFamily="body" fontSize="xl">
               Log In
             </Text>
           </Button>
           <Text textAlign="center" m="20px" color="Primary.800">
-            Don’t have an account?
+            Don't have an account?
           </Text>
-          <Button w="80%" h="40px" bg="Neutral.100" color="Primary.800" borderRadius="30px" border="2px" borderColor="Primary.800" fontWeight="medium" boxShadow="md" _hover={{ bg: "Primary.100" }} onClick={() => navigate("/signup")} >
-            <Text fontFamily="body" fontSize="xl" >
+          <Button 
+            w="80%" 
+            h="40px" 
+            bg="Neutral.100" 
+            color="Primary.800" 
+            borderRadius="30px" 
+            border="2px" 
+            borderColor="Primary.800" 
+            fontWeight="medium" 
+            boxShadow="md" 
+            _hover={{ bg: "Primary.100" }} 
+            onClick={() => navigate("/signup")}
+          >
+            <Text fontFamily="body" fontSize="xl">
               Sign Up
             </Text>
           </Button>
         </Flex>
-
       </Box>
-
     </Flex>
-  )
+  );
 }

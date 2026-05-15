@@ -16,7 +16,7 @@ export class PetController {
       if (req.file) {
         const uploadResult = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'pets/profile', resource_type: 'auto' },
+            { folder: 'catatanhewanku/pets', resource_type: 'auto' },
             (error, result) => {
               if (error) reject(error)
               else resolve(result)
@@ -94,7 +94,7 @@ export class PetController {
         // Upload new image
         const uploadResult = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'pets/profile', resource_type: 'auto' },
+            { folder: 'catatanhewanku/pets', resource_type: 'auto' },
             (error, result) => {
               if (error) reject(error)
               else resolve(result)

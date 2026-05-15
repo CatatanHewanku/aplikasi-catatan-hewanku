@@ -4,62 +4,57 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 export default function MedicationForm() {
-
   const navigate = useNavigate();
-
   const { id, logId } = useParams();
 
   const [isEditMode, setIsEditMode] = useState(false);
-
-  const [date, setDate] = useState("");
-  const [type, setType] = useState("");
-  const [vet, setVet] = useState("");
-  const [clinic, setClinic] = useState("");
-  const [weight, setWeight] = useState("");
-  const [temperature, setTemperature] = useState("");
-  const [note, setNote] = useState("");
-  const [photo, setPhoto] = useState("");
+  const [record_visit_date, setRecord_visit_date] = useState("");
+  const [record_consultation_type, setRecord_consultation_type] = useState("");
+  const [record_vet_name, setRecord_vet_name] = useState("");
+  const [record_vet_clinic_name, setRecord_vet_clinic_name] = useState("");
+  const [record_pet_weight, setRecord_pet_weight] = useState("");
+  const [record_pet_temperature, setRecord_pet_temperature] = useState("");
+  const [record_note, setRecord_note] = useState("");
+  const [record_image, setRecord_image] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-
     if (!logId) return;
 
-    const allLogs =
-      JSON.parse(localStorage.getItem("medicationLogs")) || {};
+    const fetchRecord = async () => {
+      try {
+        const response = await fetch(`http://localhost:4000/api/medical-records/${logId}`);
+        const result = await response.json();
 
-    const petLogs = allLogs[id] || [];
+        if (response.ok) {
+          setIsEditMode(true);
+          setRecord_visit_date(result.data.record_visit_date?.split('T')[0] || "");
+          setRecord_consultation_type(result.data.record_consultation_type || "");
+          setRecord_vet_name(result.data.record_vet_name || "");
+          setRecord_vet_clinic_name(result.data.record_vet_clinic_name || "");
+          setRecord_pet_weight(result.data.record_pet_weight || "");
+          setRecord_pet_temperature(result.data.record_pet_temperature || "");
+          setRecord_note(result.data.record_note || "");
+          if (result.data.record_image) {
+            setRecord_image(result.data.record_image);
+            setPhotoPreview(result.data.record_image);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching medical record:", error);
+      }
+    };
 
-    const existingLog =
-      petLogs.find(
-        (log) => String(log.id) === String(logId)
-      );
-
-    if (existingLog) {
-
-      setIsEditMode(true);
-
-      setDate(existingLog.date || "");
-      setType(existingLog.type || "");
-      setVet(existingLog.vet || "");
-      setClinic(existingLog.clinic || "");
-      setWeight(existingLog.weight || "");
-      setTemperature(existingLog.temperature || "");
-      setNote(existingLog.note || "");
-      setPhoto(existingLog.photo || "");
-    }
-
-  }, [id, logId]);
-
+    fetchRecord();
+  }, [logId]);
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    setPhoto(file); // Store the actual File object for FormData
+    setRecord_image(file);
     
-    // Show preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhotoPreview(reader.result);
@@ -67,12 +62,13 @@ export default function MedicationForm() {
     reader.readAsDataURL(file);
   };
 
-
   const handleSubmit = async () => {
-    if (!date || !type || !vet || !clinic || !weight || !temperature) return;
+    if (!record_visit_date || !record_consultation_type || !record_vet_name || !record_vet_clinic_name || !record_pet_weight || !record_pet_temperature) {
+      alert("Please fill in all required fields");
+      return;
+    }
     
-    // Photo is required for Vaccination
-    if (type === "Vaccination" && !photo) {
+    if (record_consultation_type === "Vaccination" && !record_image) {
       alert("Photo is required for Vaccination records");
       return;
     }
@@ -81,15 +77,15 @@ export default function MedicationForm() {
     try {
       const formData = new FormData();
       formData.append('pet_id', id);
-      formData.append('record_visit_date', date);
-      formData.append('record_consultation_type', type);
-      formData.append('record_vet_name', vet);
-      formData.append('record_vet_clinic_name', clinic);
-      formData.append('record_pet_weight', weight);
-      formData.append('record_pet_temperature', temperature);
-      if (note) formData.append('record_note', note);
-      if (photo && photo instanceof File) {
-        formData.append('record_image', photo);
+      formData.append('record_visit_date', record_visit_date);
+      formData.append('record_consultation_type', record_consultation_type);
+      formData.append('record_vet_name', record_vet_name);
+      formData.append('record_vet_clinic_name', record_vet_clinic_name);
+      formData.append('record_pet_weight', record_pet_weight);
+      formData.append('record_pet_temperature', record_pet_temperature);
+      if (record_note) formData.append('record_note', record_note);
+      if (record_image && record_image instanceof File) {
+        formData.append('record_image', record_image);
       }
 
       const url = isEditMode 
@@ -119,53 +115,54 @@ export default function MedicationForm() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this medical record?")) {
+      return;
+    }
 
-    const allLogs =
-      JSON.parse(localStorage.getItem("medicationLogs")) || {};
+    try {
+      const response = await fetch(`http://localhost:4000/api/medical-records/${logId}`, {
+        method: 'DELETE'
+      });
 
-    const petLogs = allLogs[id] || [];
+      const result = await response.json();
 
-
-    const updatedLogs =
-      petLogs.filter(
-        (log) => String(log.id) !== String(logId)
-      );
-
-
-    allLogs[id] = updatedLogs;
-
-    localStorage.setItem(
-      "medicationLogs",
-      JSON.stringify(allLogs)
-    );
-
-
-    navigate(`/mypet/${id}`);
+      if (response.ok) {
+        alert("Medical record deleted successfully");
+        navigate(`/mypet/${id}`);
+      } else {
+        alert(result.message || "Failed to delete medical record");
+      }
+    } catch (error) {
+      console.error("Error deleting medical record:", error);
+      alert("Error deleting medical record");
+    }
   };
 
   return (
-
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px">
       <Flex justify="flex-end">
         <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)}>
           <MdArrowBack size="28px" />
         </Box>
       </Flex>
+
       <Text fontSize="4xl" fontWeight="medium" color="Primary.800" mb="2">
         Medication Form
       </Text>
+
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800">
           Examination Date
         </Text>
-        <Input type="date" bg="Primary.100" border="none" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input type="date" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(e.target.value)} />
       </Box>
+
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800">
           Consultation Type
         </Text>
-        <Select bg="Primary.100" border="none" placeholder="Select an Option" value={type} onChange={(e) => setType(e.target.value)}>
+        <Select bg="Primary.100" border="none" placeholder="Select an Option" value={record_consultation_type} onChange={(e) => setRecord_consultation_type(e.target.value)}>
           <option value="Vaccination">Vaccination</option>
           <option value="General Check Up">General Check Up</option>
           <option value="Dental Care">Dental Care</option>
@@ -178,17 +175,19 @@ export default function MedicationForm() {
           <option value="Emergency">Emergency</option>
         </Select>
       </Box>
-      <Box bg="Primary.200" p="12px" borderRadius="14px" >
+
+      <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800">
           Veterinarian
         </Text>
-        <Input bg="Primary.100" border="none" value={vet} onChange={(e) => setVet(e.target.value)} />
+        <Input bg="Primary.100" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(e.target.value)} />
       </Box>
-      <Box bg="Primary.200" p="12px" borderRadius="14px" >
+
+      <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800">
           Veterinary Clinic
         </Text>
-        <Input bg="Primary.100" border="none" value={clinic} onChange={(e) => setClinic(e.target.value)} />
+        <Input bg="Primary.100" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(e.target.value)} />
       </Box>
 
       <Flex gap={4}>
@@ -196,188 +195,123 @@ export default function MedicationForm() {
           <Text mb="6px" color="Primary.800">
             Weight
           </Text>
-          <Input bg="Primary.100" border="none" value={weight} onChange={(e) => setWeight(e.target.value)} />
+          <Input bg="Primary.100" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(e.target.value)} />
         </Box>
-        <Box
-          bg="Primary.200"
-          p="12px"
-          borderRadius="14px"
-          flex="1"
-        >
-
-          <Text
-            mb="6px"
-            color="Primary.800"
-          >
+        <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
+          <Text mb="6px" color="Primary.800">
             Temperature
           </Text>
-
-          <Input
-            bg="Primary.100"
-            border="none"
-            value={temperature}
-            onChange={(e) => setTemperature(e.target.value)}
-          />
-
+          <Input bg="Primary.100" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(e.target.value)} />
         </Box>
-
       </Flex>
 
-      {/* 📝 NOTE */}
-      <Box
-        bg="Primary.200"
-        p="12px"
-        borderRadius="14px"
-      >
-
-        <Text
-          mb="6px"
-          color="Primary.800"
-        >
+      <Box bg="Primary.200" p="12px" borderRadius="14px">
+        <Text mb="6px" color="Primary.800">
           Medical Note
         </Text>
-
-        <Textarea
-          bg="Primary.100"
-          border="none"
-          resize="none"
-          h="180px"
-          maxLength={1000}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+        <Textarea 
+          bg="Primary.100" 
+          border="none" 
+          resize="none" 
+          h="180px" 
+          maxLength={1000} 
+          value={record_note} 
+          onChange={(e) => setRecord_note(e.target.value)} 
         />
-
         <Flex justify="flex-end">
-
-          <Text
-            fontSize="sm"
-            color="Primary.800"
-            mt="4px"
-          >
-            {note.length}/1000
+          <Text fontSize="sm" color="Primary.800" mt="4px">
+            {record_note.length}/1000
           </Text>
-
         </Flex>
-
       </Box>
 
-
-      <Flex
-        align="center"
-        gap={3}
-      >
-
-        <Box
-          as="label"
-          cursor="pointer"
-        >
-
-          <Input
-            type="file"
-            accept="image/*"
-            display="none"
-            onChange={handlePhoto}
+      <Flex align="center" gap={3}>
+        <Box as="label" cursor="pointer">
+          <Input 
+            type="file" 
+            accept="image/*" 
+            display="none" 
+            onChange={handlePhoto} 
           />
-
-          <Flex
-            w="50px"
-            h="50px"
-            borderRadius="12px"
-            border="1px"
-            borderColor="Primary.800"
-            bg="white"
-            align="center"
-            justify="center"
+          <Flex 
+            w="50px" 
+            h="50px" 
+            borderRadius="12px" 
+            border="1px" 
+            borderColor="Primary.800" 
+            bg="white" 
+            align="center" 
+            justify="center" 
             color="Primary.800"
           >
-
             <MdOutlinePhotoCamera size="24px" />
-
           </Flex>
-
         </Box>
 
         <Box>
-
-          <Text
-            fontSize="sm"
-            color="Primary.800"
-            fontWeight="medium"
-          >
+          <Text fontSize="sm" color="Primary.800" fontWeight="medium">
             Required for Vaccination!
           </Text>
-
-          <Text
-            fontSize="xs"
-            color="Primary.700"
-          >
+          <Text fontSize="xs" color="Primary.700">
             Please attach photo or sticker of vaccination
           </Text>
-
         </Box>
-
       </Flex>
 
-
       {isEditMode ? (
-
-        <Flex
-          direction="column"
-          gap={3}
-          mt="4"
-        >
-
-
+        <Flex direction="column" gap={3} mt="4">
           <Flex gap={4}>
-
-            <Button
-              flex="1"
-              borderRadius="30px"
-              h="50px"
-              bg="white"
-              border="1px"
-              borderColor="Primary.800"
-              color="Primary.800"
+            <Button 
+              flex="1" 
+              borderRadius="30px" 
+              h="50px" 
+              bg="white" 
+              border="1px" 
+              borderColor="Primary.800" 
+              color="Primary.800" 
               onClick={() => navigate(-1)}
             >
               Cancel
             </Button>
-            <Button flex="1" bg="Primary.800" color="white" borderRadius="30px" h="50px" _hover={{ opacity: 0.9 }} onClick={handleSubmit}>
-              Save
+            <Button 
+              flex="1" 
+              bg="Primary.800" 
+              color="white" 
+              borderRadius="30px" 
+              h="50px" 
+              _hover={{ opacity: 0.9 }} 
+              onClick={handleSubmit}
+              isDisabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save"}
             </Button>
           </Flex>
-          <Button
-            borderRadius="25px"
-            bg="Neutral.100"
-            border="1px"
-            borderColor="Primary.800"
-            color="red.500"
-            fontWeight="medium"
-            _hover="none"
+          <Button 
+            borderRadius="25px" 
+            bg="Neutral.100" 
+            border="1px" 
+            borderColor="Primary.800" 
+            color="red.500" 
+            fontWeight="medium" 
             onClick={handleDelete}
           >
             Delete This Log
           </Button>
-
-
         </Flex>
-
       ) : (
-
-        <Button
-          mt="4"
-          bg="Primary.800"
-          color="white"
-          borderRadius="30px"
-          h="50px"
-          fontSize="xl"
+        <Button 
+          mt="4" 
+          bg="Primary.800" 
+          color="white" 
+          borderRadius="30px" 
+          h="50px" 
+          fontSize="xl" 
           onClick={handleSubmit}
+          isDisabled={isLoading}
         >
-          Submit
+          {isLoading ? "Submitting..." : "Submit"}
         </Button>
-
       )}
-
     </Flex>
-  )
+  );
 }

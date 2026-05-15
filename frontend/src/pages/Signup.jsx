@@ -5,6 +5,21 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../images/Logo.jpeg";
 import { authService } from "../services/authService";
 
+const validatePassword = (password) => {
+  const errors = [];
+  
+  if (password.length < 8) {
+    errors.push("Password must be at least 8 characters");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Password must contain at least one uppercase letter");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Password must contain at least one lowercase letter");
+  }
+  
+  return errors;
+};
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -54,10 +69,14 @@ export default function SignUp() {
       setPasswordError("Password is required");
       return;
     }
-    if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
+
+    // Password strength validation
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      setPasswordError(passwordErrors.join("\n"));
       return;
     }
+
     if (password !== confirmPassword) {
       setPasswordError("Password does not match");
       return;
@@ -79,6 +98,7 @@ export default function SignUp() {
       setIsLoading(false);
     }
   };
+  
   return (
     <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="70px">
       <Box position="relative" bg="white" w="100%" maxW="380px" minH="700px" borderRadius="30px" px="28px" pt="65px" pb="40px" boxShadow="lg" >
@@ -132,7 +152,7 @@ export default function SignUp() {
             <Input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor={passwordError ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: passwordError ? "red.300" : "Primary.800", boxShadow: "md" }} />
           </InputGroup>
           {passwordError && (
-            <Text color="red.400" fontSize="sm" ml="8px" >
+            <Text color="red.400" fontSize="sm" ml="8px" whiteSpace="pre-wrap">
               {passwordError}
             </Text>
           )}

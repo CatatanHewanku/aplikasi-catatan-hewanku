@@ -1,4 +1,4 @@
-import { Flex, Box, Text, Button } from "@chakra-ui/react";
+import { Flex, Box, Text, Button, Image } from "@chakra-ui/react";
 import { MdAccessTime, MdChevronRight, MdBolt, MdAdd, MdPets } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -11,26 +11,19 @@ const getEvents = () => {
 export default function Home() {
   const navigate = useNavigate();
   const events = getEvents();
-  const [ownerName, setOwnerName] = useState("User");
-  const [userImage, setUserImage] = useState(null);
+  const [owner_name, setOwner_name] = useState("");
+  const [owner_image_url, setOwner_image_url] = useState(null);
 
   useEffect(() => {
-    let userData = JSON.parse(localStorage.getItem("owner"));
+    const ownerData = JSON.parse(localStorage.getItem("owner"));
     
-    if (!userData) {
-      userData = JSON.parse(localStorage.getItem("userProfile"));
-    }
-    
-    if (userData) {
-      const name = userData.owner_name || userData.firstName || "User";
-      const image = userData.owner_image_url || userData.image || null;
-      setOwnerName(name);
-      setUserImage(image);
+    if (ownerData) {
+      setOwner_name(ownerData.owner_name || "User");
+      setOwner_image_url(ownerData.owner_image_url || null);
     }
   }, []);
 
   const today = new Date();
-
   let closestEvent = null;
   let closestDate = null;
   let minDiff = Infinity;
@@ -42,42 +35,50 @@ export default function Home() {
     if (diff >= 0 && diff < minDiff) {
       minDiff = diff;
       closestDate = date;
-      closestEvent = events[date][0]; 
+      closestEvent = events[date][0];
     }
   });
 
   return (
     <Flex direction="column" p="20px" gap={4}>
-      
-      <Flex justify="space-between"align="center">
-      <Text fontSize="xl" fontWeight="medium" color="Primary.900">
-        Welcome, {ownerName}
-      </Text>
+      <Flex justify="space-between" align="center">
+        <Text fontSize="xl" fontWeight="medium" color="Primary.900">
+          Welcome, {owner_name}
+        </Text>
 
-      <Flex boxSize="50px" borderRadius="full" bg="Primary.200" justify="center" align="center" boxShadow="md" cursor="pointer" overflow="hidden" onClick={() => navigate("/user-profile")} > 
-        {userImage ? (
-          <img src={userImage}
-            style={{ width: "100%", height: "100%", objectFit: "cover"}}
-          />
-        ) : (
-          <Box color="Primary.800" fontSize="26px">
-            <MdPets />
-          </Box>
-        )}
+        <Flex 
+          boxSize="50px" 
+          borderRadius="full" 
+          bg="Primary.200" 
+          justify="center" 
+          align="center" 
+          boxShadow="md" 
+          cursor="pointer" 
+          overflow="hidden" 
+          onClick={() => navigate("/user-profile")}
+        >
+          {owner_image_url ? (
+            <Image src={owner_image_url} boxSize="50px" objectFit="cover" borderRadius="full" />
+          ) : (
+            <Box color="Primary.800" fontSize="26px">
+              <MdPets />
+            </Box>
+          )}
+        </Flex>
       </Flex>
-    </Flex>
+
       <Box borderRadius="10px" bg="Primary.200" p="12px" boxShadow="md">
         <Flex justify="space-between" align="center" mb="10px">
           <Flex align="center" gap={2}>
             <Box color="Primary.900">
-                <MdAccessTime size="20px"/>
+              <MdAccessTime size="20px" />
             </Box>
             <Text color="Primary.900" fontWeight="medium" fontSize="lg" fontFamily="heading">
               Reminder
             </Text>
           </Flex>
-          <Box color="Primary.900" onClick={() => navigate("/calendar")}>
-            <MdChevronRight size="24px"/>
+          <Box color="Primary.900" cursor="pointer" onClick={() => navigate("/calendar")}>
+            <MdChevronRight size="24px" />
           </Box>
         </Flex>
 
@@ -88,7 +89,6 @@ export default function Home() {
             </Text>
           ) : (
             <>
-    
               {closestEvent.tag && (
                 <Box display="inline-block" px="12px" py="4px" borderRadius="8px" border="1px" borderColor="Primary.800" mb="10px" fontSize="sm">
                   {closestEvent.tag}
@@ -112,10 +112,9 @@ export default function Home() {
       </Box>
 
       <Box borderRadius="10px" bg="Primary.200" p="12px" boxShadow="md">
-        
         <Flex align="center" gap={2} mb="10px">
           <Box color="Primary.900">
-            <MdBolt size="20px"/>
+            <MdBolt size="20px" />
           </Box>
           <Text color="Primary.900" fontWeight="medium" fontSize="lg" fontFamily="heading">
             Quick Action
@@ -123,28 +122,47 @@ export default function Home() {
         </Flex>
 
         <Flex gap={4} bg="Primary.100" p="15px" borderRadius="12px">
-          
-          <Flex direction="column" align="center" flex="1" bg="Neutral.100" borderRadius="10px" p="15px" textAlign="center" boxShadow="md" cursor="pointer" onClick={() => navigate("/quick-notes")}>
+          <Flex 
+            direction="column" 
+            align="center" 
+            flex="1" 
+            bg="Neutral.100" 
+            borderRadius="10px" 
+            p="15px" 
+            textAlign="center" 
+            boxShadow="md" 
+            cursor="pointer" 
+            onClick={() => navigate("/quick-notes")}
+          >
             <Box color="Primary.800">
-              <MdAdd size={30}/>
+              <MdAdd size={30} />
             </Box>
             <Text mt="5px" color="Primary.800" fontFamily="heading" fontSize="lg">
               Add Notes
             </Text>
           </Flex>
 
-          <Flex direction="column" align="center" flex="1" bg="Neutral.100" borderRadius="10px" p="15px" textAlign="center" boxShadow="md" cursor="pointer" onClick={() => navigate("/vet")}>
+          <Flex 
+            direction="column" 
+            align="center" 
+            flex="1" 
+            bg="Neutral.100" 
+            borderRadius="10px" 
+            p="15px" 
+            textAlign="center" 
+            boxShadow="md" 
+            cursor="pointer" 
+            onClick={() => navigate("/vet")}
+          >
             <Box color="Primary.800">
-              <MdPets size={30}/>
+              <MdPets size={30} />
             </Box>
             <Text mt="5px" color="Primary.800" fontFamily="heading" fontSize="lg">
               Find Vet
             </Text>
           </Flex>
-
         </Flex>
       </Box>
-
     </Flex>
   );
 }

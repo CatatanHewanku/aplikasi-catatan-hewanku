@@ -112,4 +112,22 @@ export class VetClinicModel {
     await connection.close()
     return result.recordset.length > 0
   }
+
+  // Update clinic photo URL
+  static async updateClinicPhotoUrl(clinic_id, cloudinaryUrl) {
+    const connection = await dbConnection()
+    const request = connection.request()
+
+    request.input('clinic_id', sql.Int, clinic_id)
+    request.input('cloudinary_url', sql.VarChar(sql.MAX), cloudinaryUrl)
+
+    await request.query(`
+      UPDATE VetClinic
+      SET clinic_photo_cloudinary_url = @cloudinary_url
+      WHERE clinic_id = @clinic_id
+    `)
+
+    await connection.close()
+    return { success: true }
+  }
 }

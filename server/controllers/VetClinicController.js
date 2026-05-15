@@ -2,9 +2,45 @@ import { VetClinicModel } from "../models/VetClinicModel.js"
 import { searchVetClinicsOSM } from "../services/osmSearch.js"
 import { getQuotaInfo, getEstimatedCost } from "../services/googlePlacesSearch.js"
 import { getCacheStatus, manualSync } from "../services/syncService.js"
+import { uploadToCloudinary } from "../config/cloudinary.js"
+import { Readable } from "stream"
+import axios from "axios"
 
 // Helper: Generate Google Maps URL from place_id
 const getGoogleMapsUrl = (placeId) => `https://www.google.com/maps/place/?q=place_id:${placeId}`
+
+// Helper: Download Google Place photo and upload to Cloudinary
+async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
+  try {
+    if (!photoReference) return null;
+
+    const googlePhotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`;
+    
+    const response = await axios.get(googlePhotoUrl, { responseType: 'arraybuffer' });
+    const buffer = Buffer.from(response.data);
+    
+    // Upload to Cloudinary
+    const cloudinaryResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { 
+          folder: 'catatanhewanku/vet-clinics',
+          public_id: `${clinicName.replace(/\s+/g, '_')}_${Date.now()}`,
+          resource_type: 'auto'
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      Readable.from([buffer]).pipe(uploadStream);
+    });
+    
+    return cloudinaryResult.secure_url;
+  } catch (err) {
+    console.error("Error downloading/uploading clinic photo:", err);
+    return null;
+  }
+}
 
 export class VetClinicController {
   static async createClinic(req, res) {
@@ -49,10 +85,24 @@ export class VetClinicController {
     try {
       const clinics = await VetClinicModel.getAllClinics()
       
-      // Add generated Google Maps URLs
-      clinics.forEach(clinic => {
-        clinic.google_map_url = getGoogleMapsUrl(clinic.place_id)
-      })
+      // Process each clinic to ensure it has a Cloudinary photo
+      for (const clinic of clinics) {
+        clinic.google_map_url = getGoogleMapsUrl(clinic.place_id);
+        
+        // If no Cloudinary URL, download and upload the Google photo
+        if (!clinic.clinic_photo_cloudinary_url && clinic.clinic_photo_reference) {
+          const cloudinaryUrl = await downloadAndUploadClinicPhoto(
+            clinic.clinic_photo_reference,
+            clinic.clinic_name
+          );
+          
+          if (cloudinaryUrl) {
+            // Save to database
+            await VetClinicModel.updateClinicPhotoUrl(clinic.clinic_id, cloudinaryUrl);
+            clinic.clinic_photo_cloudinary_url = cloudinaryUrl;
+          }
+        }
+      }
 
       res.status(200).json({ message: "Clinics retrieved successfully", data: clinics })
     } catch (err) {
