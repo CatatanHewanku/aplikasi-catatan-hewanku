@@ -174,4 +174,36 @@ export class VetClinicController {
       res.status(500).json({ message: err.message })
     }
   }
+
+  static async getClinicsByDistance(req, res) {
+    try {
+      const { latitude, longitude } = req.body
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude are required" })
+      }
+
+      const clinics = await VetClinicModel.getClinicsByDistance(latitude, longitude)
+      
+      for (const clinic of clinics) {
+        clinic.google_map_url = getGoogleMapsUrl(clinic.place_id)
+        
+        if (!clinic.clinic_photo_cloudinary_url && clinic.clinic_photo_reference) {
+          const cloudinaryUrl = await downloadAndUploadClinicPhoto(
+            clinic.clinic_photo_reference,
+            clinic.clinic_name
+          )
+          
+          if (cloudinaryUrl) {
+            await VetClinicModel.updateClinicPhotoUrl(clinic.clinic_id, cloudinaryUrl)
+            clinic.clinic_photo_cloudinary_url = cloudinaryUrl
+          }
+        }
+      }
+
+      res.status(200).json({ message: "Clinics retrieved by distance", data: clinics })
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  }
 }

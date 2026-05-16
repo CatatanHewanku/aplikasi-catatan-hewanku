@@ -19,7 +19,7 @@ import ForgotPasswordPhone from "./pages/ForgotPasswordPhone";
 import OTPVerification from "./pages/OTPVerification";
 import ResetPassword from "./pages/ResetPassword";
 import UserProfile from "./pages/UserProfile.jsx";
-
+import { CacheProvider } from './context/CacheContext.jsx';
 
 function App() {
   const isLogin = 
@@ -38,23 +38,25 @@ function App() {
     )
   }
   return (
-    <>
-      <Layout>
-      <Navbar />
-      <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/user-profile" element={<UserProfile />} />
-      <Route path="/quick-notes" element={<QuickNotes />} />
-      <Route path="/mypet" element={<MyPet />} />
-      <Route path="/medication-form/:id" element={<MedicationForm />} />
-      <Route path="/medication-form/:id/:logId" element={<MedicationForm />}/>
-      <Route path="/notes-form/:id" element={<NotesDetail />}/>
-      <Route path="/mypet/:id" element={<MedicationDetail />} />
-      <Route path="/calendar" element={<Calendar />} />
-      <Route path="/vet" element={<Vet />} />
-      </Routes>
-      </Layout>
-    </>
+    <CacheProvider>
+      <>
+        <Layout>
+        <Navbar />
+        <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="/quick-notes" element={<QuickNotes />} />
+        <Route path="/mypet" element={<MyPet />} />
+        <Route path="/medication-form/:id" element={<MedicationForm />} />
+        <Route path="/medication-form/:id/:logId" element={<MedicationForm />}/>
+        <Route path="/notes-form/:id" element={<NotesDetail />}/>
+        <Route path="/mypet/:id" element={<MedicationDetail />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/vet" element={<Vet />} />
+        </Routes>
+        </Layout>
+      </>
+    </CacheProvider>
   )
 }
 

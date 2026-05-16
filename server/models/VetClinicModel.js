@@ -130,4 +130,31 @@ export class VetClinicModel {
     await connection.close()
     return { success: true }
   }
+
+  // Get clinics sorted by distance from user location
+  static async getClinicsByDistance(userLatitude, userLongitude) {
+    const connection = await dbConnection()
+    const request = connection.request()
+
+    request.input('userLat', sql.Decimal(10, 8), userLatitude)
+    request.input('userLng', sql.Decimal(11, 8), userLongitude)
+
+    const result = await request.query(`
+      SELECT 
+        clinic_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, 
+        clinic_phone, clinic_photo_cloudinary_url, clinic_photo_reference, place_id,
+        ROUND(
+          SQRT(
+            POWER(clinic_latitude - @userLat, 2) + 
+            POWER(clinic_longitude - @userLng, 2)
+          ) * 111.32, 
+          2
+        ) as distance_km
+      FROM VetClinic
+      ORDER BY distance_km ASC
+    `)
+
+    await connection.close()
+    return result.recordset
+  }
 }

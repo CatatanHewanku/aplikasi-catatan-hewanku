@@ -63,8 +63,8 @@ export class FavoriteClinicModel {
         v.clinic_address,
         v.clinic_latitude,
         v.clinic_longitude,
-        v.clinic_status,
-        v.google_map_url,
+        v.clinic_photo_cloudinary_url,
+        v.clinic_photo_reference,
         v.place_id,
         f.created_at
       FROM FavoriteClinic f

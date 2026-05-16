@@ -14,4 +14,7 @@ router.patch("/:clinic_id", VetClinicController.updateClinic)
 router.get("/quota/info", VetClinicController.getQuota)
 router.post("/sync/manual", VetClinicController.manualSyncGoogle)
 
+// Nearby clinics
+router.post("/nearby", VetClinicController.getClinicsByDistance)
+
 export default router

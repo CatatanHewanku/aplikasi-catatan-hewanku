@@ -1,11 +1,13 @@
 import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Select } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdAdd, MdSearch } from "react-icons/md";
+import { CacheContext } from "../context/CacheContext.jsx";
 import DefaultPet from "../images/defaultPet.jpeg";
 
 export default function MyPet() {
     const navigate = useNavigate();
+    const { getCachedData, updateCache } = useContext(CacheContext);
 
     const [search, setSearch] = useState("");
     const [pets, setPets] = useState([]);
@@ -23,6 +25,13 @@ export default function MyPet() {
     useEffect(() => {
         const fetchPets = async () => {
             try {
+                // Check cache first
+                const cachedPets = getCachedData('myPets');
+                if (cachedPets && cachedPets.length > 0) {
+                    setPets(cachedPets);
+                    return;
+                }
+
                 const ownerData = JSON.parse(localStorage.getItem("owner"));
                 if (!ownerData?.owner_id) {
                     console.log("No owner found");
@@ -33,8 +42,10 @@ export default function MyPet() {
                 const result = await response.json();
 
                 if (response.ok) {
-                    setPets(result.data || []);
-                    localStorage.setItem("pets", JSON.stringify(result.data || []));
+                    const petsData = result.data || [];
+                    setPets(petsData);
+                    updateCache('myPets', petsData);
+                    localStorage.setItem("pets", JSON.stringify(petsData));
                 } else {
                     console.error("Failed to fetch pets:", result.message);
                 }
@@ -101,6 +112,7 @@ export default function MyPet() {
 
                 const updated = [...pets, newPet];
                 setPets(updated);
+                updateCache('myPets', updated);
                 localStorage.setItem("pets", JSON.stringify(updated));
                 
                 alert("Pet added successfully");
@@ -137,6 +149,7 @@ export default function MyPet() {
             if (response.ok) {
                 const updated = pets.filter((pet) => pet.pet_id !== petId);
                 setPets(updated);
+                updateCache('myPets', updated);
                 localStorage.setItem("pets", JSON.stringify(updated));
                 alert("Pet deleted successfully");
             } else {
