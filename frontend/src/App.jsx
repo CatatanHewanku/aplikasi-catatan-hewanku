@@ -11,7 +11,7 @@ import Calendar from './pages/Calendar'
 import QuickNotes from "./pages/QuickNotes";
 import MedicationForm from "./pages/MedicationForm"
 import MedicationDetail from "./pages/MedicationDetail"
-import NotesDetail from "./pages/NotesDetail";
+import NotesDetail from "./pages/NotesForm.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/Signup.jsx";
 import ForgotPasswordEmail from "./pages/ForgotPasswordEmail";

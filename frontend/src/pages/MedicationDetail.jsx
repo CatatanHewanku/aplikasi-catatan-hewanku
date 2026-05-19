@@ -120,7 +120,7 @@ export default function MedicationDetail() {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
       alert("Invalid file format! Please upload only JPG or PNG images.");
-      e.target.value = null; 
+      e.target.value = null;
       return;
     }
 
@@ -215,7 +215,7 @@ export default function MedicationDetail() {
 
   return (
     <Flex direction="column" p="20px" gap={5} minH="100vh" pb="120px">
-      
+
       <Flex justify="space-between" align="center" pt="20px" pb="10px">
         <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)}>
           <MdArrowBack size="28px" />
@@ -267,15 +267,12 @@ export default function MedicationDetail() {
               <Text color="Primary.800" fontWeight="medium" fontSize="md">Name</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
               <Text color="Primary.900" fontWeight="bold" fontSize="lg" isTruncated>{pet.pet_name}</Text>
-
               <Text color="Primary.800" fontWeight="medium" fontSize="md">DOB</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
               <Text color="Primary.900" fontWeight="bold" fontSize="lg">{pet.pet_dob ? new Date(pet.pet_dob).toISOString().split('T')[0] : "-"}</Text>
-
               <Text color="Primary.800" fontWeight="medium" fontSize="md">Type</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
               <Text color="Primary.900" fontWeight="bold" fontSize="lg">{pet.pet_type} ({calculateAgeCategory(pet.pet_dob)})</Text>
-
               <Text color="Primary.800" fontWeight="medium" fontSize="md">Gender</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
               <Text color="Primary.900" fontWeight="bold" fontSize="lg">{pet.pet_gender || "-"}</Text>
@@ -382,7 +379,7 @@ export default function MedicationDetail() {
           </ModalHeader>
           <ModalBody>
             <Flex direction="column" gap={4}>
-              
+
               <Flex justify="center" mb={2}>
                 <Box position="relative" cursor="pointer" transition="all 0.2s" _hover={{ transform: "scale(1.05)" }}>
                   <Flex boxSize="100px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden" boxShadow="sm" border="3px solid" borderColor="Primary.800">
@@ -405,7 +402,7 @@ export default function MedicationDetail() {
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
                 <Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
               </Box>
-              
+
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
                 <Input type="date" value={pet_dob} onChange={(e) => setPet_dob(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
@@ -427,15 +424,15 @@ export default function MedicationDetail() {
                     {["Cat", "Dog"].map((opt, index, arr) => {
                       const isSelected = pet_type === opt;
                       return (
-                        <MenuItem 
-                          key={opt} 
-                          onClick={() => setPet_type(opt)} 
-                          bg={isSelected ? "Primary.100" : "white"} 
+                        <MenuItem
+                          key={opt}
+                          onClick={() => setPet_type(opt)}
+                          bg={isSelected ? "Primary.100" : "white"}
                           _hover={{ bg: "Primary.50" }}
                           color="Primary.900"
                           fontWeight={isSelected ? "bold" : "medium"}
                           borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                          borderColor="Primary.300" 
+                          borderColor="Primary.300"
                           py={3}
                         >
                           {opt}
@@ -462,15 +459,15 @@ export default function MedicationDetail() {
                     {["Male", "Female"].map((opt, index, arr) => {
                       const isSelected = pet_gender === opt;
                       return (
-                        <MenuItem 
-                          key={opt} 
-                          onClick={() => setPet_gender(opt)} 
-                          bg={isSelected ? "Primary.100" : "white"} 
+                        <MenuItem
+                          key={opt}
+                          onClick={() => setPet_gender(opt)}
+                          bg={isSelected ? "Primary.100" : "white"}
                           _hover={{ bg: "Primary.50" }}
                           color="Primary.900"
                           fontWeight={isSelected ? "bold" : "medium"}
                           borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                          borderColor="Primary.300" 
+                          borderColor="Primary.300"
                           py={3}
                         >
                           {opt}

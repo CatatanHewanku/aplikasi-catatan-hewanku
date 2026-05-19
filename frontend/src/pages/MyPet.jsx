@@ -233,12 +233,12 @@ export default function MyPet() {
                             flex="1"
                             overflow="hidden"
                         >
-                            <Image 
-                                src={pet.pet_image || DefaultPet} 
-                                boxSize="70px" 
-                                minW="70px" 
-                                borderRadius="full" 
-                                objectFit="cover" 
+                            <Image
+                                src={pet.pet_image || DefaultPet}
+                                boxSize="70px"
+                                minW="70px"
+                                borderRadius="full"
+                                objectFit="cover"
                             />
                             <Flex direction="column" gap={0} flex="1" overflow="hidden">
                                 <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>
@@ -305,7 +305,7 @@ export default function MyPet() {
                     </ModalHeader>
                     <ModalBody>
                         <Flex direction="column" gap={4}>
-                            
+
                             <Flex justify="center" mb={2}>
                                 <Box position="relative" cursor="pointer" transition="all 0.2s" _hover={{ transform: "scale(1.05)" }}>
                                     <Flex boxSize="100px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden" boxShadow="sm" border="3px solid" borderColor="Primary.800">
@@ -328,12 +328,12 @@ export default function MyPet() {
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
                                 <Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
                             </Box>
-                            
+
                             <Box>
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
                                 <Input type="date" value={pet_dob} onChange={(e) => setPet_dob(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
                             </Box>
-                            
+
                             {/* CUSTOM DROPDOWN: Pet Type */}
                             <Box>
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Type</Text>
@@ -350,15 +350,15 @@ export default function MyPet() {
                                         {["Cat", "Dog"].map((opt, index, arr) => {
                                             const isSelected = pet_type === opt;
                                             return (
-                                                <MenuItem 
-                                                    key={opt} 
-                                                    onClick={() => setPet_type(opt)} 
-                                                    bg={isSelected ? "Primary.100" : "white"} 
+                                                <MenuItem
+                                                    key={opt}
+                                                    onClick={() => setPet_type(opt)}
+                                                    bg={isSelected ? "Primary.100" : "white"}
                                                     _hover={{ bg: "Primary.50" }}
                                                     color="Primary.900"
                                                     fontWeight={isSelected ? "bold" : "medium"}
                                                     borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                                                    borderColor="Primary.300" 
+                                                    borderColor="Primary.300"
                                                     py={3}
                                                 >
                                                     {opt}
@@ -385,15 +385,15 @@ export default function MyPet() {
                                         {["Male", "Female"].map((opt, index, arr) => {
                                             const isSelected = pet_gender === opt;
                                             return (
-                                                <MenuItem 
-                                                    key={opt} 
-                                                    onClick={() => setPet_gender(opt)} 
-                                                    bg={isSelected ? "Primary.100" : "white"} 
+                                                <MenuItem
+                                                    key={opt}
+                                                    onClick={() => setPet_gender(opt)}
+                                                    bg={isSelected ? "Primary.100" : "white"}
                                                     _hover={{ bg: "Primary.50" }}
                                                     color="Primary.900"
                                                     fontWeight={isSelected ? "bold" : "medium"}
                                                     borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                                                    borderColor="Primary.300" 
+                                                    borderColor="Primary.300"
                                                     py={3}
                                                 >
                                                     {opt}

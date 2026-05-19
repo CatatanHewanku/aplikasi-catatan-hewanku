@@ -1,10 +1,10 @@
 import { 
   Flex, Box, Text, Input, Button, Modal, ModalOverlay, ModalContent, 
   ModalHeader, ModalBody, ModalFooter, Select, Popover, PopoverTrigger, 
-  PopoverContent, PopoverBody 
+  PopoverContent, PopoverBody, useToast, useDisclosure 
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime } from "react-icons/md";
+import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning } from "react-icons/md";
 
 // --- CUSTOM ALARM/CLOCK WHEEL COMPONENT ---
 const ScrollWheel = ({ items, selectedValue, onSelect }) => {
@@ -66,6 +66,7 @@ const ScrollWheel = ({ items, selectedValue, onSelect }) => {
 };
 
 export default function Calendar() {
+  const toast = useToast();
   const today = new Date();
   
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -83,6 +84,10 @@ export default function Calendar() {
   const [inputText, setInputText] = useState("");
   const [inputTime, setInputTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // New State for safe deletion
+  const { isOpen: isDeleteEventOpen, onOpen: onOpenDeleteEvent, onClose: onCloseDeleteEvent } = useDisclosure();
+  const [eventToDelete, setEventToDelete] = useState(null);
 
   const tags = ["", "Vaccination", "General Check Up", "Dental Care", "Parasite Control", "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", "Follow-up", "Emergency"];
 
@@ -103,6 +108,19 @@ export default function Calendar() {
 
   const formatDate = (day) => {
     return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+
+  // --- CUSTOM IN-APP ALERT (TOAST) ---
+  const showToast = (message, status = "success") => {
+    toast({
+        position: "top",
+        duration: 3000,
+        render: () => (
+            <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+                {message}
+            </Box>
+        ),
+    });
   };
 
   const handleNextMonth = () => {
@@ -142,7 +160,6 @@ export default function Calendar() {
     }
   };
 
-  // Fetch all reminders for the current month
   const fetchAllRemindersForMonth = async () => {
     try {
       const ownerData = JSON.parse(localStorage.getItem("owner"));
@@ -164,16 +181,12 @@ export default function Calendar() {
           remindersByDate[dateStr].push(reminder);
         });
 
-        setReminders((prev) => ({
-          ...prev,
-          ...remindersByDate
-        }));
+        setReminders((prev) => ({ ...prev, ...remindersByDate }));
       }
     } catch (error) {
       console.error("Error fetching month reminders:", error);
     }
   };
-
 
   useEffect(() => {
     if (selectedDate) {
@@ -181,25 +194,26 @@ export default function Calendar() {
     }
   }, [selectedDate]);
 
-  // Fetch all reminders for the month when component mounts or month changes
   useEffect(() => {
     fetchAllRemindersForMonth();
   }, [month, year]);
 
   const saveEvent = async () => {
-    if (!inputText || !inputTime || !selectedDate) return;
+    if (!inputText || !inputTime || !selectedDate) {
+      showToast("Please fill in all details", "error");
+      return;
+    }
 
     setIsLoading(true);
     try {
       const ownerData = JSON.parse(localStorage.getItem("owner"));
       if (!ownerData?.owner_id) {
-        alert("User not found");
+        showToast("User not found", "error");
         setIsLoading(false);
         return;
       }
 
       if (editingReminderId) {
-        // Update existing reminder
         const response = await fetch(`http://localhost:4000/api/reminder/${editingReminderId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -211,6 +225,7 @@ export default function Calendar() {
         });
 
         if (response.ok) {
+          showToast("Reminder updated!", "success");
           await fetchReminders(selectedDate);
           setInputText("");
           setInputTime("");
@@ -219,10 +234,9 @@ export default function Calendar() {
           setIsOpen(false);
         } else {
           const error = await response.json();
-          alert(error.message || "Failed to update reminder");
+          showToast(error.message || "Failed to update reminder", "error");
         }
       } else {
-        // Create new reminder
         const response = await fetch("http://localhost:4000/api/reminder", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -236,6 +250,7 @@ export default function Calendar() {
         });
 
         if (response.ok) {
+          showToast("Reminder saved!", "success");
           await fetchReminders(selectedDate);
           setInputText("");
           setInputTime("");
@@ -243,31 +258,34 @@ export default function Calendar() {
           setIsOpen(false);
         } else {
           const error = await response.json();
-          alert(error.message || "Failed to save reminder");
+          showToast(error.message || "Failed to save reminder", "error");
         }
       }
     } catch (error) {
       console.error("Error saving reminder:", error);
-      alert("Error saving reminder");
+      showToast("Error saving reminder", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const removeEvent = async (date, reminderId) => {
+  const confirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
     try {
-      const response = await fetch(`http://localhost:4000/api/reminder/${reminderId}`, {
-        method: "DELETE"
-      });
+      const response = await fetch(`http://localhost:4000/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
 
       if (response.ok) {
-        await fetchReminders(date);
+        showToast("Reminder deleted", "success");
+        await fetchReminders(eventToDelete.date);
       } else {
-        alert("Failed to delete reminder");
+        showToast("Failed to delete reminder", "error");
       }
     } catch (error) {
       console.error("Error deleting reminder:", error);
-      alert("Error deleting reminder");
+      showToast("Error deleting reminder", "error");
+    } finally {
+      onCloseDeleteEvent();
+      setEventToDelete(null);
     }
   };
 
@@ -276,8 +294,7 @@ export default function Calendar() {
   const currentMinute = inputTime ? inputTime.split(":")[1] : "00";
 
   return (
-    <Flex direction="column" minH="100vh" py={6} px={4} align="center">
-      
+    <Flex direction="column" minH="100vh" py={6} px={4} align="center" pb="120px">
       <Box w="100%" maxW="400px">
         <Text pb={4} fontSize="2xl" color="Primary.900" fontFamily="heading" fontWeight="bold">
           Calendar
@@ -298,14 +315,9 @@ export default function Calendar() {
                       {monthNames[month]}
                     </Text>
                   </PopoverTrigger>
-                  {/* MOBILE FIX: maxW="90vw" ensures it never spills off the screen */}
                   <PopoverContent w="140px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden">
                     <PopoverBody p={0}>
-                      <ScrollWheel 
-                        items={monthNames} 
-                        selectedValue={monthNames[month]} 
-                        onSelect={(m) => setMonth(monthNames.indexOf(m))} 
-                      />
+                      <ScrollWheel items={monthNames} selectedValue={monthNames[month]} onSelect={(m) => setMonth(monthNames.indexOf(m))} />
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
@@ -318,11 +330,7 @@ export default function Calendar() {
                   </PopoverTrigger>
                   <PopoverContent w="100px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden">
                     <PopoverBody p={0}>
-                      <ScrollWheel 
-                        items={yearOptions} 
-                        selectedValue={year} 
-                        onSelect={(y) => setYear(y)} 
-                      />
+                      <ScrollWheel items={yearOptions} selectedValue={year} onSelect={(y) => setYear(y)} />
                     </PopoverBody>
                   </PopoverContent>
                 </Popover>
@@ -414,16 +422,13 @@ export default function Calendar() {
                       </Flex>
                     </Flex>
 
+                    {/* Safe Delete Button triggers modal instead of instantly removing */}
                     <Flex 
-                      boxSize="30px" 
-                      align="center" 
-                      justify="center" 
-                      borderRadius="full" 
-                      color="red.400" 
-                      _hover={{ bg: "red.50" }}
+                      boxSize="30px" align="center" justify="center" borderRadius="full" color="red.400" _hover={{ bg: "red.50" }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeEvent(selectedDate, item.reminder_id);
+                        setEventToDelete({ ...item, date: selectedDate });
+                        onOpenDeleteEvent();
                       }}
                     >
                       <MdClose size="20px" />
@@ -442,20 +447,14 @@ export default function Calendar() {
                 setIsOpen(true);
               }}
             >
-              <Box color="white">
-                <MdAdd size="24px" />
-              </Box>
+              <Box color="white"><MdAdd size="24px" /></Box>
             </Button>
           </Box>
-
         </Flex>
       </Box>
 
-      {/* --- ADD EVENT MODAL --- */}
-      <Modal isOpen={isOpen} onClose={() => {
-        setIsOpen(false);
-        setEditingReminderId(null);
-      }} isCentered>
+      {/* --- ADD/EDIT EVENT MODAL --- */}
+      <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditingReminderId(null); }} isCentered>
         <ModalOverlay />
         <ModalContent borderRadius="xl" mx={4}>
           <ModalHeader fontFamily="heading" color="Primary.900">
@@ -464,17 +463,15 @@ export default function Calendar() {
           <ModalBody>
             <Flex direction="column" gap={4}>
               <Box>
-                <Text fontSize="sm" fontWeight="medium" color="Primary.800" mb={1}>Event Name</Text>
-                <Input placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(e.target.value)} borderColor="Primary.300" focusBorderColor="Primary.800" />
+                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Event Name</Text>
+                <Input bg="white" placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(e.target.value)} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800" />
               </Box>
 
               <Box>
-                <Text fontSize="sm" fontWeight="medium" color="Primary.800" mb={1}>Time</Text>
-                
-                {/* MOBILE FIX: matchWidth forces the dropdown to exactly match the width of the input box! */}
+                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Time</Text>
                 <Popover placement="bottom-start" matchWidth isLazy>
                   <PopoverTrigger>
-                    <Flex border="1px solid" borderColor="Primary.300" borderRadius="md" p={2} px={4} justify="space-between" align="center" cursor="pointer" _hover={{ borderColor: "Primary.500" }}>
+                    <Flex bg="white" border="1px solid" borderColor="Primary.300" borderRadius="md" p={2} px={4} justify="space-between" align="center" cursor="pointer" _hover={{ borderColor: "Primary.500" }}>
                       <Text color={inputTime ? "Primary.900" : "gray.400"}>
                         {inputTime || "Select Time"}
                       </Text>
@@ -497,8 +494,8 @@ export default function Calendar() {
               </Box>
 
               <Box>
-                <Text fontSize="sm" fontWeight="medium" color="Primary.800" mb={1}>Category</Text>
-                <Select placeholder="No Category" value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} borderColor="Primary.300" focusBorderColor="Primary.800">
+                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Category</Text>
+                <Select bg="white" placeholder="No Category" value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800">
                   {tags.filter(t => t !== "").map((tag, i) => (
                     <option key={i} value={tag}>{tag}</option>
                   ))}
@@ -508,18 +505,42 @@ export default function Calendar() {
           </ModalBody>
 
           <ModalFooter borderTop="1px solid" borderColor="gray.100" mt={2}>
-            <Button mr={3} onClick={() => {
-              setIsOpen(false);
-              setEditingReminderId(null);
-            }} variant="ghost" color="Primary.800">
+            <Button mr={3} onClick={() => { setIsOpen(false); setEditingReminderId(null); }} bg="Neutral.100" color="Primary.800" borderRadius="30px">
               Cancel
             </Button>
-            <Button bg="Primary.800" color="white" onClick={saveEvent} isDisabled={isLoading} _hover={{ bg: "Primary.700" }}>
+            <Button bg="Primary.800" color="white" onClick={saveEvent} isDisabled={isLoading} borderRadius="30px" _hover={{ opacity: 0.9 }}>
               {isLoading ? "Saving..." : "Save"}
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* --- CONFIRMATION MODAL FOR DELETING AN EVENT --- */}
+      <Modal isOpen={isDeleteEventOpen} onClose={onCloseDeleteEvent} isCentered>
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+        <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
+            <ModalBody>
+                <Flex justify="center" mb={4}>
+                    <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
+                        <MdWarning size="32px" />
+                    </Flex>
+                </Flex>
+                <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Event?</Text>
+                <Text color="Primary.800" fontSize="sm" mb={4}>
+                    Are you sure you want to cancel this event?
+                </Text>
+            </ModalBody>
+            <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
+                <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDeleteEvent}>
+                    Back
+                </Button>
+                <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={confirmDeleteEvent} _hover={{ bg: "red.600" }}>
+                    Delete
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+      </Modal>
+
     </Flex>
   );
 }
