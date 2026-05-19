@@ -20,7 +20,8 @@ app.use(cors({
     const allowedOrigins = [
       'https://localhost:5501',
       'http://localhost:3000',
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'https://6sx5712j-5173.asse.devtunnels.ms'
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -70,8 +71,13 @@ dbConnection()
     } else {
       console.log("⚠️ Auto-sync disabled (development mode)")
     }
-  })
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
-})
+    // Move this inside .then() so it waits for DB connection
+    app.listen(process.env.PORT, () => {
+      console.log(`Server is running on port ${PORT}`)
+    })
+  })
+  .catch(err => {
+    console.error("Database connection failed:", err)
+    process.exit(1)
+  })

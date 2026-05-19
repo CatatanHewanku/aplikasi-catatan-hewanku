@@ -4,7 +4,8 @@ import {
   PopoverContent, PopoverBody, useToast, useDisclosure 
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning } from "react-icons/md";
+import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning, MdKeyboardArrowDown } from "react-icons/md";
+const URL_Name = import.meta.env.VITE_API_URL
 
 // --- CUSTOM ALARM/CLOCK WHEEL COMPONENT ---
 const ScrollWheel = ({ items, selectedValue, onSelect }) => {
@@ -85,7 +86,6 @@ export default function Calendar() {
   const [inputTime, setInputTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // New State for safe deletion
   const { isOpen: isDeleteEventOpen, onOpen: onOpenDeleteEvent, onClose: onCloseDeleteEvent } = useDisclosure();
   const [eventToDelete, setEventToDelete] = useState(null);
 
@@ -110,7 +110,6 @@ export default function Calendar() {
     return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   };
 
-  // --- CUSTOM IN-APP ALERT (TOAST) ---
   const showToast = (message, status = "success") => {
     toast({
         position: "top",
@@ -146,7 +145,7 @@ export default function Calendar() {
       const ownerData = JSON.parse(localStorage.getItem("owner"));
       if (!ownerData?.owner_id) return;
 
-      const response = await fetch(`http://localhost:4000/api/reminder?owner_id=${ownerData.owner_id}&reminder_date=${date}`);
+      const response = await fetch(`${URL_Name}/api/reminder?owner_id=${ownerData.owner_id}&reminder_date=${date}`);
       const result = await response.json();
 
       if (response.ok) {
@@ -166,21 +165,17 @@ export default function Calendar() {
       if (!ownerData?.owner_id) return;
 
       const response = await fetch(
-        `http://localhost:4000/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
+        `${URL_Name}/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
       );
       const result = await response.json();
 
       if (response.ok && result.data) {
         const remindersByDate = {};
-
         result.data.forEach((reminder) => {
           const dateStr = reminder.reminder_date;
-          if (!remindersByDate[dateStr]) {
-            remindersByDate[dateStr] = [];
-          }
+          if (!remindersByDate[dateStr]) remindersByDate[dateStr] = [];
           remindersByDate[dateStr].push(reminder);
         });
-
         setReminders((prev) => ({ ...prev, ...remindersByDate }));
       }
     } catch (error) {
@@ -189,9 +184,7 @@ export default function Calendar() {
   };
 
   useEffect(() => {
-    if (selectedDate) {
-      fetchReminders(selectedDate);
-    }
+    if (selectedDate) fetchReminders(selectedDate);
   }, [selectedDate]);
 
   useEffect(() => {
@@ -213,53 +206,40 @@ export default function Calendar() {
         return;
       }
 
-      if (editingReminderId) {
-        const response = await fetch(`http://localhost:4000/api/reminder/${editingReminderId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            reminder_title: inputText,
-            reminder_time: inputTime,
-            reminder_category: selectedTag || null
-          })
-        });
+      const payload = {
+        reminder_title: inputText,
+        reminder_time: inputTime,
+        reminder_category: selectedTag || null
+      };
 
-        if (response.ok) {
-          showToast("Reminder updated!", "success");
-          await fetchReminders(selectedDate);
-          setInputText("");
-          setInputTime("");
-          setSelectedTag("");
-          setEditingReminderId(null);
-          setIsOpen(false);
-        } else {
-          const error = await response.json();
-          showToast(error.message || "Failed to update reminder", "error");
-        }
+      if (!editingReminderId) {
+        payload.owner_id = ownerData.owner_id;
+        payload.reminder_date = selectedDate;
+      }
+
+      const url = editingReminderId 
+        ? `${URL_Name}/api/reminder/${editingReminderId}`
+        : `${URL_Name}/api/reminder`;
+
+      const method = editingReminderId ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        showToast(`Reminder ${editingReminderId ? "updated" : "saved"}!`, "success");
+        await fetchReminders(selectedDate);
+        setInputText("");
+        setInputTime("");
+        setSelectedTag("");
+        setEditingReminderId(null);
+        setIsOpen(false);
       } else {
-        const response = await fetch("http://localhost:4000/api/reminder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            owner_id: ownerData.owner_id,
-            reminder_date: selectedDate,
-            reminder_title: inputText,
-            reminder_time: inputTime,
-            reminder_category: selectedTag || null
-          })
-        });
-
-        if (response.ok) {
-          showToast("Reminder saved!", "success");
-          await fetchReminders(selectedDate);
-          setInputText("");
-          setInputTime("");
-          setSelectedTag("");
-          setIsOpen(false);
-        } else {
-          const error = await response.json();
-          showToast(error.message || "Failed to save reminder", "error");
-        }
+        const error = await response.json();
+        showToast(error.message || "Failed to save reminder", "error");
       }
     } catch (error) {
       console.error("Error saving reminder:", error);
@@ -272,7 +252,7 @@ export default function Calendar() {
   const confirmDeleteEvent = async () => {
     if (!eventToDelete) return;
     try {
-      const response = await fetch(`http://localhost:4000/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
+      const response = await fetch(`${URL_Name}/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
 
       if (response.ok) {
         showToast("Reminder deleted", "success");
@@ -301,40 +281,35 @@ export default function Calendar() {
         </Text>
 
         <Flex direction="column" align="center" gap={5}>
-          
           <Box w="100%" borderRadius="xl" bg="Primary.200" display="flex" flexDirection="column" p={4} boxShadow="sm">
             <Flex justify="space-between" align="center" px={2} pb={4} color="Primary.900">
               <Box cursor="pointer" onClick={handlePrevMonth}>
                 <MdChevronLeft size={28} />
               </Box>
 
-              <Flex gap={2} align="center">
-                <Popover placement="bottom" isLazy>
-                  <PopoverTrigger>
-                    <Text cursor="pointer" fontSize="lg" fontWeight="bold">
-                      {monthNames[month]}
+              {/* SINGLE COMBINED MONTH/YEAR DROPDOWN */}
+              <Popover placement="bottom" isLazy>
+                <PopoverTrigger>
+                  <Flex align="center" gap={1} cursor="pointer" _hover={{ opacity: 0.8 }}>
+                    <Text fontSize="lg" fontWeight="bold">
+                      {monthNames[month]} {year}
                     </Text>
-                  </PopoverTrigger>
-                  <PopoverContent w="140px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden">
-                    <PopoverBody p={0}>
-                      <ScrollWheel items={monthNames} selectedValue={monthNames[month]} onSelect={(m) => setMonth(monthNames.indexOf(m))} />
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
-
-                <Popover placement="bottom" isLazy>
-                  <PopoverTrigger>
-                    <Text cursor="pointer" fontSize="lg" fontWeight="bold">
-                      {year}
-                    </Text>
-                  </PopoverTrigger>
-                  <PopoverContent w="100px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden">
-                    <PopoverBody p={0}>
-                      <ScrollWheel items={yearOptions} selectedValue={year} onSelect={(y) => setYear(y)} />
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
-              </Flex>
+                    <MdKeyboardArrowDown size={22} />
+                  </Flex>
+                </PopoverTrigger>
+                <PopoverContent w="240px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden" boxShadow="xl">
+                  <PopoverBody p={0}>
+                    <Flex>
+                      <Box flex={1} borderRight="1px solid" borderColor="gray.100">
+                        <ScrollWheel items={monthNames} selectedValue={monthNames[month]} onSelect={(m) => setMonth(monthNames.indexOf(m))} />
+                      </Box>
+                      <Box flex={1}>
+                        <ScrollWheel items={yearOptions} selectedValue={year} onSelect={(y) => setYear(y)} />
+                      </Box>
+                    </Flex>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
 
               <Box cursor="pointer" onClick={handleNextMonth}>
                 <MdChevronRight size={28} />
@@ -422,9 +397,7 @@ export default function Calendar() {
                       </Flex>
                     </Flex>
 
-                    {/* Safe Delete Button triggers modal instead of instantly removing */}
-                    <Flex 
-                      boxSize="30px" align="center" justify="center" borderRadius="full" color="red.400" _hover={{ bg: "red.50" }}
+                    <Flex boxSize="30px" align="center" justify="center" borderRadius="full" color="red.400" _hover={{ bg: "red.50" }}
                       onClick={(e) => {
                         e.stopPropagation();
                         setEventToDelete({ ...item, date: selectedDate });
@@ -455,7 +428,7 @@ export default function Calendar() {
 
       {/* --- ADD/EDIT EVENT MODAL --- */}
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditingReminderId(null); }} isCentered>
-        <ModalOverlay />
+        <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="xl" mx={4}>
           <ModalHeader fontFamily="heading" color="Primary.900">
             {editingReminderId !== null ? "Edit Event" : "Add Event"}
@@ -517,7 +490,7 @@ export default function Calendar() {
 
       {/* --- CONFIRMATION MODAL FOR DELETING AN EVENT --- */}
       <Modal isOpen={isDeleteEventOpen} onClose={onCloseDeleteEvent} isCentered>
-        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+        <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
             <ModalBody>
                 <Flex justify="center" mb={4}>
@@ -540,7 +513,6 @@ export default function Calendar() {
             </ModalFooter>
         </ModalContent>
       </Modal>
-
     </Flex>
   );
 }

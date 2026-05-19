@@ -3,6 +3,7 @@ import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt, MdPets, M
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
+const URL_Name = import.meta.env.VITE_API_URL
 
 export default function UserProfile() {
     const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function UserProfile() {
             }
 
             const response = await fetch(
-                `http://localhost:4000/api/owners/${ownerData.owner_id}`,
+                `${URL_Name}/api/owners/${ownerData.owner_id}`,
                 { method: "PATCH", body: formData }
             );
 
@@ -147,7 +148,7 @@ export default function UserProfile() {
             const ownerData = JSON.parse(localStorage.getItem("owner"));
             if (!ownerData?.owner_id) return;
 
-            const response = await fetch(`http://localhost:4000/api/owners/${ownerData.owner_id}`, {
+            const response = await fetch(`${URL_Name}/api/owners/${ownerData.owner_id}`, {
                 method: 'DELETE',
             });
 
@@ -275,7 +276,7 @@ export default function UserProfile() {
 
             {/* --- CUSTOM CONFIRMATION MODAL (Replaces window.confirm) --- */}
             <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
-                <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+                <ModalOverlay bg="blackAlpha.600" />
                 <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
                     <ModalBody>
                         <Flex justify="center" mb={4}>

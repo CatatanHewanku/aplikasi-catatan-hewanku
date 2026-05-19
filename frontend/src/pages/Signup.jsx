@@ -1,5 +1,5 @@
-import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image } from "@chakra-ui/react";
-import { MdEmail, MdLock, MdPerson, MdPhone } from "react-icons/md";
+import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image } from "@chakra-ui/react";
+import { MdEmail, MdLock, MdPerson, MdPhone, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../images/Logo.jpeg";
@@ -7,7 +7,7 @@ import { authService } from "../services/authService";
 
 const validatePassword = (password) => {
   const errors = [];
-  
+
   if (password.length < 8) {
     errors.push("Password must be at least 8 characters");
   }
@@ -17,7 +17,7 @@ const validatePassword = (password) => {
   if (!/[a-z]/.test(password)) {
     errors.push("Password must contain at least one lowercase letter");
   }
-  
+
   return errors;
 };
 
@@ -29,6 +29,8 @@ export default function SignUp() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -98,7 +100,7 @@ export default function SignUp() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="70px">
       <Box position="relative" bg="white" w="100%" maxW="380px" minH="700px" borderRadius="30px" px="28px" pt="65px" pb="40px" boxShadow="lg" >
@@ -139,17 +141,19 @@ export default function SignUp() {
             <Input placeholder="Phone Number" value={phone} onChange={(e) => { const value = e.target.value.replace(/\D/g, ""); setPhone(value); }} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
           </InputGroup>
           <InputGroup>
-            <InputLeftElement pointerEvents="none" color="Primary.800">
-              <MdLock size="20px" />
-            </InputLeftElement>
-            <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
+            <Input type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
+            </InputRightElement>
           </InputGroup>
 
           <InputGroup>
-            <InputLeftElement pointerEvents="none" color="Primary.800">
-              <MdLock size="20px" />
-            </InputLeftElement>
-            <Input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor={passwordError ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: passwordError ? "red.300" : "Primary.800", boxShadow: "md" }} />
+            <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
+            <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor={passwordError ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: passwordError ? "red.300" : "Primary.800", boxShadow: "md" }} />
+            <InputRightElement cursor="pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+              {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
+            </InputRightElement>
           </InputGroup>
           {passwordError && (
             <Text color="red.400" fontSize="sm" ml="8px" whiteSpace="pre-wrap">

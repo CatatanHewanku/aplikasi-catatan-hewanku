@@ -3,30 +3,44 @@ import { MdArrowBack, MdLocationOn, MdPhone, MdMap } from "react-icons/md";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DogHouse from "../images/defaultPet.jpeg";
+const URL_Name = import.meta.env.VITE_API_URL
 
 export default function VetClinicDetail() {
   const navigate = useNavigate();
   const { clinic_id } = useParams();
   const location = useLocation();
+  const toast = useToast();
   const [clinic, setClinic] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const distance = location.state?.distance_km || "N/A";
 
+  const showToast = (message, status = "error") => {
+    toast({
+      position: "top",
+      duration: 3000,
+      render: () => (
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+          {message}
+        </Box>
+      ),
+    });
+  };
+
   useEffect(() => {
     const fetchClinicDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:4000/api/vet-clinics/${clinic_id}`);
+        const response = await fetch(`${URL_Name}/api/vet-clinics/${clinic_id}`);
         const result = await response.json();
 
         if (response.ok) {
           setClinic(result.data);
         } else {
-          alert("Failed to load clinic details");
+          showToast("Failed to load clinic details", "error");
         }
       } catch (error) {
         console.error("Error fetching clinic details:", error);
-        alert("Error loading clinic details");
+        showToast("Error loading clinic details", "error");
       } finally {
         setIsLoading(false);
       }
@@ -64,7 +78,7 @@ export default function VetClinicDetail() {
 
   return (
     <Flex direction="column" minH="100vh" p="20px" pb="120px">
-      
+
       {/* HEADER: Standardized centering */}
       <Flex justify="space-between" align="center" pt="20px" pb="20px">
         <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">

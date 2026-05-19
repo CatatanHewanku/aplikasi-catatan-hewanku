@@ -1,14 +1,28 @@
-import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Icon, Divider } from "@chakra-ui/react";
+import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Icon, Divider, useToast } from "@chakra-ui/react";
 import { useState, useEffect, useContext, Fragment } from "react";
 import { MdFilterAlt, MdSearch, MdStar, MdStarBorder, MdLocationOn } from "react-icons/md";
 import { CacheContext } from '../context/CacheContext.jsx';
 import { useNavigate } from "react-router-dom";
 import DogHouse from "../images/DogHouse.jpeg";
+const URL_Name = import.meta.env.VITE_API_URL
 
 export default function Vet() {
+    const toast = useToast();
     const [search, setSearch] = useState("");
     const [clinics, setClinics] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const showToast = (message, status = "error") => {
+        toast({
+            position: "top",
+            duration: 3000,
+            render: () => (
+                <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+                    {message}
+                </Box>
+            ),
+        });
+    };
 
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
         const R = 6371
@@ -40,7 +54,7 @@ export default function Vet() {
 
         const fetchClinics = async () => {
             try {
-                const response = await fetch('http://localhost:4000/api/vet-clinics');
+                const response = await fetch(`${URL_Name}/api/vet-clinics`);
                 const result = await response.json();
 
                 if (response.ok) {
@@ -52,7 +66,7 @@ export default function Vet() {
 
                     if (owner_id) {
                         try {
-                            const favResponse = await fetch(`http://localhost:4000/api/favorites/owner/${owner_id}`);
+                            const favResponse = await fetch(`${URL_Name}/api/favorites/owner/${owner_id}`);
                             if (favResponse.ok) {
                                 const favResult = await favResponse.json();
                                 const favoriteIds = (favResult.data || []).map(fav => fav.clinic_id);
@@ -117,13 +131,13 @@ export default function Vet() {
 
         try {
             if (isFavorite) {
-                await fetch('http://localhost:4000/api/favorites', {
+                await fetch(`${URL_Name}/api/favorites`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ owner_id, clinic_id })
                 });
             } else {
-                const response = await fetch('http://localhost:4000/api/favorites', {
+                const response = await fetch(`${URL_Name}/api/favorites`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ owner_id, clinic_id })
@@ -131,7 +145,7 @@ export default function Vet() {
 
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(error.message);
+                    showToast(error.message || "Failed to add favorite", "error");
                     return;
                 }
             }
@@ -166,7 +180,7 @@ export default function Vet() {
             <Text pt="20px" pb="20px" fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
                 Vet
             </Text>
-            
+
             <Flex direction="column" gap={5}>
                 <InputGroup w="100%" mb="10px">
                     <Input placeholder="Search vet..." value={search} onChange={(e) => setSearch(e.target.value)} border="1px" borderColor="Primary.900" borderRadius="20px" />
@@ -211,15 +225,15 @@ export default function Vet() {
                                         </Text>
                                     )}
 
-                                    <Flex 
-                                      align="center" 
-                                      justify="space-between" 
-                                      my={2} 
-                                      w="100%"
-                                      cursor="pointer"
-                                      onClick={() => navigate(`/vet-clinic/${clinic.clinic_id}`, { state: { distance_km: clinic.distance_km } })}
-                                      _hover={{ opacity: 0.8 }}
-                                      transition="opacity 0.2s"
+                                    <Flex
+                                        align="center"
+                                        justify="space-between"
+                                        my={2}
+                                        w="100%"
+                                        cursor="pointer"
+                                        onClick={() => navigate(`/vet-clinic/${clinic.clinic_id}`, { state: { distance_km: clinic.distance_km } })}
+                                        _hover={{ opacity: 0.8 }}
+                                        transition="opacity 0.2s"
                                     >
                                         <Flex align="center" gap={4} flex="1" overflow="hidden">
                                             <Image

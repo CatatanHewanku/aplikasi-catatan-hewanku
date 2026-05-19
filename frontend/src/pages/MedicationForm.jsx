@@ -1,7 +1,8 @@
-import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, ModalContent, IconButton, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
-import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown } from "react-icons/md";
+import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, ModalContent, ModalBody, ModalFooter, IconButton, Menu, MenuButton, MenuList, MenuItem, useToast, useDisclosure } from "@chakra-ui/react";
+import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdWarning } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
   "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
@@ -12,6 +13,9 @@ const consultationOptions = [
 export default function MedicationForm() {
   const navigate = useNavigate();
   const { id, logId } = useParams();
+  
+  const toast = useToast();
+  const { isOpen: isDeleteOpen, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure();
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [record_visit_date, setRecord_visit_date] = useState("");
@@ -25,15 +29,27 @@ export default function MedicationForm() {
   const [photoPreview, setPhotoPreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // State for the Image Zoom Modal
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+
+  // --- CUSTOM IN-APP ALERT (TOAST) ---
+  const showToast = (message, status = "success") => {
+    toast({
+        position: "top",
+        duration: 3500,
+        render: () => (
+            <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+                {message}
+            </Box>
+        ),
+    });
+  };
 
   useEffect(() => {
     if (!logId) return;
 
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`http://localhost:4000/api/medical-records/${logId}`);
+        const response = await fetch(`${URL_Name}/api/medical-records/${logId}`);
         const result = await response.json();
 
         if (response.ok) {
@@ -64,7 +80,7 @@ export default function MedicationForm() {
 
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-      alert("Invalid file format! Please upload only JPG or PNG images.");
+      showToast("Invalid file format! Please upload only JPG or PNG images.", "error");
       e.target.value = null;
       return;
     }
@@ -80,12 +96,12 @@ export default function MedicationForm() {
 
   const handleSubmit = async () => {
     if (!record_visit_date || !record_consultation_type || !record_vet_name || !record_vet_clinic_name || !record_pet_weight || !record_pet_temperature) {
-      alert("Please fill in all required fields");
+      showToast("Please fill in all required fields", "error");
       return;
     }
 
     if (record_consultation_type === "Vaccination" && !record_image) {
-      alert("Photo is required for Vaccination records");
+      showToast("Photo is required for Vaccination records", "error");
       return;
     }
 
@@ -105,53 +121,46 @@ export default function MedicationForm() {
       }
 
       const url = isEditMode
-        ? `http://localhost:4000/api/medical-records/${logId}`
-        : 'http://localhost:4000/api/medical-records';
+        ? `${URL_Name}/api/medical-records/${logId}`
+        : `${URL_Name}/api/medical-records`;
 
       const method = isEditMode ? 'PATCH' : 'POST';
 
-      const response = await fetch(url, {
-        method: method,
-        body: formData
-      });
-
+      const response = await fetch(url, { method: method, body: formData });
       const result = await response.json();
 
       if (response.ok) {
-        alert(isEditMode ? "Medical record updated successfully" : "Medical record created successfully");
+        showToast(isEditMode ? "Medical record updated successfully" : "Medical record created successfully", "success");
         navigate(-1);
       } else {
-        alert(result.message || "Failed to save medical record");
+        showToast(result.message || "Failed to save medical record", "error");
       }
     } catch (error) {
       console.error("Error saving medical record:", error);
-      alert("Error saving medical record");
+      showToast("Error saving medical record", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this medical record?")) {
-      return;
-    }
-
     try {
-      const response = await fetch(`http://localhost:4000/api/medical-records/${logId}`, {
+      const response = await fetch(`${URL_Name}/api/medical-records/${logId}`, {
         method: 'DELETE'
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        alert("Medical record deleted successfully");
+        showToast("Medical record deleted successfully", "success");
+        onCloseDelete();
         navigate(-1);
       } else {
-        alert(result.message || "Failed to delete medical record");
+        showToast(result.message || "Failed to delete medical record", "error");
       }
     } catch (error) {
       console.error("Error deleting medical record:", error);
-      alert("Error deleting medical record");
+      showToast("Error deleting medical record", "error");
     }
   };
 
@@ -160,7 +169,7 @@ export default function MedicationForm() {
       
       {/* STANDARD HEADER */}
       <Flex justify="space-between" align="center" pt="20px" pb="10px">
-        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)}>
+        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
           <MdArrowBack size="28px" />
         </Box>
         <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
@@ -173,7 +182,7 @@ export default function MedicationForm() {
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Examination Date
         </Text>
-        <Input type="date" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(e.target.value)} />
+        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(e.target.value)} />
       </Box>
 
       {/* CHAKRA MENU DROPDOWN FIX */}
@@ -193,14 +202,13 @@ export default function MedicationForm() {
             alignItems="center"
           >
             <Flex justify="space-between" align="center" h="100%">
-              <Text color={record_consultation_type ? "black" : "gray.500"} fontSize="md">
+              <Text color={record_consultation_type ? "Primary.800" : "Primary.600"} fontSize="md">
                 {record_consultation_type || "Select an Option"}
               </Text>
               <MdKeyboardArrowDown color="gray" size="20px" />
             </Flex>
           </MenuButton>
           
-          {/* FIXED: Removed overflow="hidden" so scrolling works perfectly again */}
           <MenuList bg="Primary.100" borderColor="Primary.300" maxH="250px" overflowY="auto" zIndex={10} p={0} borderRadius="md" boxShadow="lg">
             {consultationOptions.map((opt, index) => {
               const isSelected = record_consultation_type === opt;
@@ -209,10 +217,10 @@ export default function MedicationForm() {
                 <MenuItem 
                   key={opt} 
                   onClick={() => setRecord_consultation_type(opt)} 
-                  bg={isSelected ? "Primary.300" : "Primary.100"} // Different background for selected
+                  bg={isSelected ? "Primary.300" : "Primary.100"} 
                   _hover={{ bg: "Primary.200" }}
-                  color="Primary.900"
-                  fontWeight={isSelected ? "bold" : "medium"} // Bold font for selected
+                  color="Primary.800"
+                  fontWeight={isSelected ? "bold" : "medium"} 
                   borderBottom={index !== consultationOptions.length - 1 ? "1px solid" : "none"}
                   borderColor="Primary.300" 
                   py={3}
@@ -229,14 +237,14 @@ export default function MedicationForm() {
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinarian
         </Text>
-        <Input bg="Primary.100" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(e.target.value)} />
+        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(e.target.value)} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinary Clinic
         </Text>
-        <Input bg="Primary.100" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(e.target.value)} />
+        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(e.target.value)} />
       </Box>
 
       <Flex gap={4}>
@@ -244,13 +252,13 @@ export default function MedicationForm() {
           <Text mb="6px" color="Primary.800" fontWeight="medium">
             Weight
           </Text>
-          <Input bg="Primary.100" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(e.target.value)} />
+          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(e.target.value)} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
           <Text mb="6px" color="Primary.800" fontWeight="medium">
             Temperature
           </Text>
-          <Input bg="Primary.100" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(e.target.value)} />
+          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(e.target.value)} />
         </Box>
       </Flex>
 
@@ -262,6 +270,7 @@ export default function MedicationForm() {
           bg="Primary.100"
           border="none"
           resize="none"
+          color="Primary.800" 
           h="180px"
           maxLength={1000}
           value={record_note}
@@ -309,7 +318,7 @@ export default function MedicationForm() {
         </Flex>
 
         {photoPreview && (
-          <Box position="relative" w="120px" h="120px" cursor="pointer" onClick={() => setIsImageZoomOpen(true)} _hover={{ opacity: 0.9 }}>
+          <Box position="relative" w="120px" h="120px" mt={2}>
             <Image
               src={photoPreview}
               alt="Attachment preview"
@@ -319,6 +328,23 @@ export default function MedicationForm() {
               borderRadius="12px"
               border="2px solid"
               borderColor="Primary.800"
+              cursor="pointer" 
+              onClick={() => setIsImageZoomOpen(true)} 
+              _hover={{ opacity: 0.9 }}
+            />
+            <IconButton 
+              icon={<MdClose size="14px" />} 
+              size="xs" 
+              isRound 
+              bg="red.500" 
+              color="white" 
+              position="absolute" 
+              top="-8px" 
+              right="-8px" 
+              boxShadow="md" 
+              _hover={{ bg: "red.600", transform: "scale(1.1)" }} 
+              onClick={() => { setRecord_image(null); setPhotoPreview(""); }} 
+              aria-label="Remove photo" 
             />
           </Box>
         )}
@@ -360,7 +386,7 @@ export default function MedicationForm() {
             borderColor="Primary.800"
             color="red.500"
             fontWeight="medium"
-            onClick={handleDelete}
+            onClick={onOpenDelete}
           >
             Delete This Log
           </Button>
@@ -379,6 +405,32 @@ export default function MedicationForm() {
           {isLoading ? "Submitting..." : "Submit"}
         </Button>
       )}
+
+      {/* --- CONFIRMATION MODAL FOR DELETION --- */}
+      <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
+        <ModalOverlay bg="blackAlpha.600" />
+        <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
+            <ModalBody>
+                <Flex justify="center" mb={4}>
+                    <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
+                        <MdWarning size="32px" />
+                    </Flex>
+                </Flex>
+                <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Medical Record?</Text>
+                <Text color="Primary.800" fontSize="sm" mb={4}>
+                    Are you absolutely sure you want to delete this medical log? This action is permanent and cannot be undone.
+                </Text>
+            </ModalBody>
+            <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
+                <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDelete}>
+                    Cancel
+                </Button>
+                <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={handleDelete} _hover={{ bg: "red.600" }}>
+                    Delete
+                </Button>
+            </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* --- IMAGE ZOOM MODAL --- */}
       <Modal isOpen={isImageZoomOpen} onClose={() => setIsImageZoomOpen(false)} isCentered size="xl">

@@ -1,13 +1,14 @@
-import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image } from "@chakra-ui/react";
-import { MdArrowBack, MdLock } from "react-icons/md";
+import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image, InputRightElement } from "@chakra-ui/react";
+import { MdArrowBack, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Logo from "../images/Logo.jpeg";
 import { authService } from "../services/authService";
+const URL_Name = import.meta.env.VITE_API_URL
 
 const validatePassword = (password) => {
   const errors = [];
-  
+
   if (password.length < 8) {
     errors.push("Password must be at least 8 characters");
   }
@@ -17,7 +18,7 @@ const validatePassword = (password) => {
   if (!/[a-z]/.test(password)) {
     errors.push("Password must contain at least one lowercase letter");
   }
-  
+
   return errors;
 };
 
@@ -28,6 +29,8 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // SMART DETECTION: Are we changing a known password, or resetting a forgotten one?
   const loggedInOwner = JSON.parse(localStorage.getItem("owner"));
@@ -61,7 +64,7 @@ export default function ResetPassword() {
         formData.append("password", password);
 
         // Reusing the exact same endpoint from UserProfile
-        const response = await fetch(`http://localhost:4000/api/owners/${loggedInOwner.owner_id}`, {
+        const response = await fetch(`${URL_Name}/api/owners/${loggedInOwner.owner_id}`, {
           method: "PATCH",
           body: formData
         });
@@ -81,13 +84,13 @@ export default function ResetPassword() {
         if (!savedEmail || !savedCode) {
           throw new Error("Missing reset credentials. Please restart the password reset process.");
         }
-        
+
         await authService.resetPassword(savedEmail, savedCode, password);
-        
+
         // Clean up memory
         localStorage.removeItem("resetEmail");
         localStorage.removeItem("resetCode");
-        
+
         alert("Password reset successfully!");
         navigate("/");
       }
@@ -102,7 +105,7 @@ export default function ResetPassword() {
   return (
     <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="70px">
       <Box position="relative" bg="white" w="100%" maxW="380px" borderRadius="30px" px="28px" pt="75px" pb="40px" boxShadow="lg">
-        
+
         {/* Floating Logo */}
         <Flex position="absolute" top="-60px" left="50%" transform="translateX(-50%)" justify="center" align="center" w="100%">
           <Image src={Logo} w="120px" objectFit="contain" filter="drop-shadow(0px 4px 6px rgba(0,0,0,0.1))" borderRadius="full" />
@@ -129,23 +132,11 @@ export default function ResetPassword() {
               New Password
             </Text>
             <InputGroup>
-              <InputLeftElement pointerEvents="none" color="Primary.800">
-                <MdLock size="20px" />
-              </InputLeftElement>
-              <Input 
-                type="password" 
-                placeholder="Enter new password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                bg="white" 
-                borderRadius="30px" 
-                border="1px solid" 
-                borderColor="Primary.300" 
-                focusBorderColor="Primary.800"
-                color="Primary.900"
-                fontWeight="medium"
-                boxShadow="sm" 
-              />
+              <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
+              <Input type={showPassword ? "text" : "password"} placeholder="Enter new password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px solid" borderColor="Primary.300" focusBorderColor="Primary.800" color="Primary.900" fontWeight="medium" boxShadow="sm" />
+              <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
+              </InputRightElement>
             </InputGroup>
           </Box>
 
@@ -154,23 +145,11 @@ export default function ResetPassword() {
               Confirm Password
             </Text>
             <InputGroup>
-              <InputLeftElement pointerEvents="none" color="Primary.800">
-                <MdLock size="20px" />
-              </InputLeftElement>
-              <Input 
-                type="password" 
-                placeholder="Confirm new password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
-                bg="white" 
-                borderRadius="30px" 
-                border="1px solid" 
-                borderColor={error ? "red.400" : "Primary.300"} 
-                focusBorderColor="Primary.800"
-                color="Primary.900"
-                fontWeight="medium"
-                boxShadow="sm" 
-              />
+              <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
+              <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px solid" borderColor={error ? "red.400" : "Primary.300"} focusBorderColor="Primary.800" color="Primary.900" fontWeight="medium" boxShadow="sm" />
+              <InputRightElement cursor="pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
+              </InputRightElement>
             </InputGroup>
           </Box>
         </Flex>
@@ -185,16 +164,16 @@ export default function ResetPassword() {
         )}
 
         <Flex justify="center" mt="40px">
-          <Button 
-            w="100%" 
-            h="50px" 
-            bg="Primary.800" 
-            color="white" 
-            borderRadius="30px" 
-            fontSize="lg" 
+          <Button
+            w="100%"
+            h="50px"
+            bg="Primary.800"
+            color="white"
+            borderRadius="30px"
+            fontSize="lg"
             fontWeight="bold"
             boxShadow="md"
-            _hover={{ opacity: 0.9, transform: "translateY(-2px)" }} 
+            _hover={{ opacity: 0.9, transform: "translateY(-2px)" }}
             transition="all 0.2s"
             onClick={handleResetPassword}
             isDisabled={isLoading}

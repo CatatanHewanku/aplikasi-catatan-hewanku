@@ -2,6 +2,7 @@ import { Flex, Box, Text, Button, Image } from "@chakra-ui/react";
 import { MdAccessTime, MdChevronRight, MdBolt, MdAdd, MdPets } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+const URL_Name = import.meta.env.VITE_API_URL
 
 export default function Home() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function Home() {
 
         // Fetch upcoming reminders for next 90 days
         const response = await fetch(
-          `http://localhost:4000/api/reminder/upcoming?owner_id=${ownerData.owner_id}&days_ahead=90`
+          `${URL_Name}/api/reminder/upcoming?owner_id=${ownerData.owner_id}&days_ahead=90`
         );
         const result = await response.json();
 
@@ -148,7 +149,7 @@ export default function Home() {
 
             const nowTime = new Date();
             const response = await fetch(
-              `http://localhost:4000/api/reminder/upcoming?owner_id=${ownerData.owner_id}&days_ahead=90`
+              `${URL_Name}/api/reminder/upcoming?owner_id=${ownerData.owner_id}&days_ahead=90`
             );
             const result = await response.json();
 

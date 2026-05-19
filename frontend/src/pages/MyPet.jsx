@@ -1,18 +1,23 @@
-import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, IconButton, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
-import { MdAdd, MdSearch, MdEdit, MdDelete, MdCameraAlt, MdPets, MdKeyboardArrowDown } from "react-icons/md";
+import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, IconButton, Menu, MenuButton, MenuList, MenuItem, useToast, useDisclosure } from "@chakra-ui/react";
+import { MdAdd, MdSearch, MdEdit, MdDelete, MdCameraAlt, MdPets, MdKeyboardArrowDown, MdWarning } from "react-icons/md";
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CacheContext } from "../context/CacheContext.jsx";
 import DefaultPet from "../images/defaultPet.jpeg";
+const URL_Name = import.meta.env.VITE_API_URL
 
 export default function MyPet() {
     const navigate = useNavigate();
+    const toast = useToast();
     const { getCachedData, updateCache } = useContext(CacheContext);
 
     const [search, setSearch] = useState("");
     const [pets, setPets] = useState([]);
     const [isEdit, setIsEdit] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+
+    const { isOpen: isDeleteOpen, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure();
+    const [petToDelete, setPetToDelete] = useState(null);
 
     const [editingPetId, setEditingPetId] = useState(null);
     const [pet_name, setPet_name] = useState("");
@@ -22,6 +27,18 @@ export default function MyPet() {
     const [pet_image, setPet_image] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    const showToast = (message, status = "success") => {
+        toast({
+            position: "top",
+            duration: 3000,
+            render: () => (
+                <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+                    {message}
+                </Box>
+            ),
+        });
+    };
 
     useEffect(() => {
         const fetchPets = async () => {
@@ -35,7 +52,7 @@ export default function MyPet() {
                 const ownerData = JSON.parse(localStorage.getItem("owner"));
                 if (!ownerData?.owner_id) return;
 
-                const response = await fetch(`http://localhost:4000/api/pets/owner/${ownerData.owner_id}`);
+                const response = await fetch(`${URL_Name}/api/pets/owner/${ownerData.owner_id}`);
                 const result = await response.json();
 
                 if (response.ok) {
@@ -58,7 +75,7 @@ export default function MyPet() {
 
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!validTypes.includes(file.type)) {
-            alert("Invalid file format! Please upload only JPG or PNG images.");
+            showToast("Invalid file format! Please upload only JPG or PNG images.", "error");
             e.target.value = null;
             return;
         }
@@ -86,7 +103,7 @@ export default function MyPet() {
 
     const savePet = async () => {
         if (!pet_name || !pet_type || !pet_gender) {
-            alert("Name, Type, and Gender are required!");
+            showToast("Name, Type, and Gender are required!", "error");
             return;
         }
 
@@ -94,7 +111,7 @@ export default function MyPet() {
         try {
             const ownerData = JSON.parse(localStorage.getItem("owner"));
             if (!ownerData?.owner_id) {
-                alert("User not found");
+                showToast("User not found", "error");
                 setIsLoading(false);
                 return;
             }
@@ -110,8 +127,8 @@ export default function MyPet() {
             }
 
             const url = editingPetId
-                ? `http://localhost:4000/api/pets/${editingPetId}`
-                : 'http://localhost:4000/api/pets';
+                ? `${URL_Name}/api/pets/${editingPetId}`
+                : `${URL_Name}/api/pets`;
 
             const method = editingPetId ? 'PATCH' : 'POST';
 
@@ -119,11 +136,7 @@ export default function MyPet() {
                 formData.append('owner_id', ownerData.owner_id);
             }
 
-            const response = await fetch(url, {
-                method: method,
-                body: formData
-            });
-
+            const response = await fetch(url, { method: method, body: formData });
             const result = await response.json();
 
             if (response.ok) {
@@ -132,25 +145,15 @@ export default function MyPet() {
 
                 if (editingPetId) {
                     updatedPets = pets.map(p => p.pet_id === editingPetId ? {
-                        ...p,
-                        pet_name,
-                        pet_dob,
-                        pet_type,
-                        pet_gender,
-                        pet_image: returnedImage
+                        ...p, pet_name, pet_dob, pet_type, pet_gender, pet_image: returnedImage
                     } : p);
-                    alert("Pet updated successfully");
+                    showToast("Pet updated successfully");
                 } else {
                     const newPet = {
-                        pet_id: result.data.pet_id,
-                        pet_name,
-                        pet_dob,
-                        pet_type,
-                        pet_gender,
-                        pet_image: returnedImage
+                        pet_id: result.data.pet_id, pet_name, pet_dob, pet_type, pet_gender, pet_image: returnedImage
                     };
                     updatedPets = [...pets, newPet];
-                    alert("Pet added successfully");
+                    showToast("Pet added successfully");
                 }
 
                 setPets(updatedPets);
@@ -160,11 +163,11 @@ export default function MyPet() {
                 resetForm();
                 setIsOpen(false);
             } else {
-                alert(result.message || "Failed to save pet");
+                showToast(result.message || "Failed to save pet", "error");
             }
         } catch (error) {
             console.error("Error saving pet:", error);
-            alert("Error saving pet");
+            showToast("Error saving pet", "error");
         } finally {
             setIsLoading(false);
         }
@@ -180,26 +183,27 @@ export default function MyPet() {
         setImagePreview("");
     };
 
-    const deletePet = async (petId) => {
-        if (!window.confirm("Are you sure you want to delete this pet?")) return;
-
+    const deletePet = async () => {
+        if (!petToDelete) return;
         try {
-            const response = await fetch(`http://localhost:4000/api/pets/${petId}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`${URL_Name}/api/pets/${petToDelete}`, { method: 'DELETE' });
 
             if (response.ok) {
-                const updated = pets.filter((pet) => pet.pet_id !== petId);
+                const updated = pets.filter((pet) => pet.pet_id !== petToDelete);
                 setPets(updated);
                 updateCache('myPets', updated);
                 localStorage.setItem("pets", JSON.stringify(updated));
+                showToast("Pet deleted successfully");
             } else {
                 const result = await response.json();
-                alert(result.message || "Failed to delete pet");
+                showToast(result.message || "Failed to delete pet", "error");
             }
         } catch (error) {
             console.error("Error deleting pet:", error);
-            alert("Error deleting pet");
+            showToast("Error deleting pet", "error");
+        } finally {
+            onCloseDelete();
+            setPetToDelete(null);
         }
     };
 
@@ -225,48 +229,22 @@ export default function MyPet() {
             <Flex direction="column" gap={4} mt={2}>
                 {filteredPets.map((pet) => (
                     <Flex key={pet.pet_id} align="center" justify="space-between" w="100%">
-                        <Flex
-                            align="center"
-                            gap={4}
-                            cursor={isEdit ? "default" : "pointer"}
-                            onClick={() => !isEdit && navigate(`/mypet/${pet.pet_id}`)}
-                            flex="1"
-                            overflow="hidden"
-                        >
-                            <Image
-                                src={pet.pet_image || DefaultPet}
-                                boxSize="70px"
-                                minW="70px"
-                                borderRadius="full"
-                                objectFit="cover"
-                            />
+                        <Flex align="center" gap={4} cursor={isEdit ? "default" : "pointer"} onClick={() => !isEdit && navigate(`/mypet/${pet.pet_id}`)} flex="1" overflow="hidden">
+                            <Image src={pet.pet_image || DefaultPet} boxSize="70px" minW="70px" borderRadius="full" objectFit="cover" />
                             <Flex direction="column" gap={0} flex="1" overflow="hidden">
-                                <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>
-                                    {pet.pet_name}
-                                </Text>
-                                <Text fontFamily="body" fontSize="sm" color="Primary.800" isTruncated mt={1}>
-                                    {pet.pet_type}
-                                </Text>
+                                <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>{pet.pet_name}</Text>
+                                <Text fontFamily="body" fontSize="sm" color="Primary.800" isTruncated mt={1}>{pet.pet_type}</Text>
                             </Flex>
                         </Flex>
 
                         {isEdit && (
                             <Flex gap={2} pl={4}>
-                                <IconButton
-                                    icon={<MdEdit />}
-                                    colorScheme="blue"
-                                    size="sm"
-                                    borderRadius="full"
-                                    onClick={() => openEditModal(pet)}
-                                    aria-label="Edit Pet"
-                                />
-                                <IconButton
-                                    icon={<MdDelete />}
-                                    colorScheme="red"
-                                    size="sm"
-                                    borderRadius="full"
-                                    onClick={() => deletePet(pet.pet_id)}
-                                    aria-label="Delete Pet"
+                                <IconButton icon={<MdEdit />} colorScheme="blue" size="sm" borderRadius="full" onClick={() => openEditModal(pet)} aria-label="Edit Pet" />
+                                <IconButton icon={<MdDelete />} colorScheme="red" size="sm" borderRadius="full" aria-label="Delete Pet"
+                                    onClick={() => {
+                                        setPetToDelete(pet.pet_id);
+                                        onOpenDelete();
+                                    }} 
                                 />
                             </Flex>
                         )}
@@ -286,35 +264,29 @@ export default function MyPet() {
                 {search === "" && (
                     <Flex justify="center">
                         <Button bg="Neutral.100" h="40px" w="50%" border="1px" borderColor="Primary.800" borderRadius="25px" gap={2} onClick={openAddModal}>
-                            <Box color="Primary.800">
-                                <MdAdd size="20px" />
-                            </Box>
-                            <Text color="Primary.800">
-                                Add More Pet
-                            </Text>
+                            <Box color="Primary.800"><MdAdd size="20px" /></Box>
+                            <Text color="Primary.800">Add More Pet</Text>
                         </Button>
                     </Flex>
                 )}
             </Flex>
 
+            {/* --- ADD/EDIT MODAL --- */}
             <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); resetForm(); }} isCentered>
-                <ModalOverlay bg="blackAlpha.400" />
+                <ModalOverlay bg="blackAlpha.600" />
                 <ModalContent borderRadius="16px" p="10px" mx="20px">
                     <ModalHeader textAlign="center" color="Primary.900" fontFamily="heading" fontSize="xl" fontWeight="bold">
                         {editingPetId ? "Edit Pet Profile" : "Add Pet Profile"}
                     </ModalHeader>
                     <ModalBody>
                         <Flex direction="column" gap={4}>
-
                             <Flex justify="center" mb={2}>
                                 <Box position="relative" cursor="pointer" transition="all 0.2s" _hover={{ transform: "scale(1.05)" }}>
                                     <Flex boxSize="100px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden" boxShadow="sm" border="3px solid" borderColor="Primary.800">
                                         {imagePreview ? (
                                             <Image src={imagePreview} boxSize="100px" borderRadius="full" objectFit="cover" />
                                         ) : (
-                                            <Box color="Primary.800" fontSize="40px">
-                                                <MdPets />
-                                            </Box>
+                                            <Box color="Primary.800" fontSize="40px"><MdPets /></Box>
                                         )}
                                     </Flex>
                                     <Flex position="absolute" bottom="-2px" right="-2px" bg="Primary.800" boxSize="32px" borderRadius="full" justify="center" align="center" color="white" boxShadow="sm" border="2px solid white">
@@ -328,21 +300,16 @@ export default function MyPet() {
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
                                 <Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
                             </Box>
-
                             <Box>
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
                                 <Input type="date" value={pet_dob} onChange={(e) => setPet_dob(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" />
                             </Box>
-
-                            {/* CUSTOM DROPDOWN: Pet Type */}
                             <Box>
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Type</Text>
                                 <Menu matchWidth>
                                     <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.800" borderRadius="md" px="16px" cursor="pointer" alignItems="center">
                                         <Flex justify="space-between" align="center" h="100%">
-                                            <Text color={pet_type ? "black" : "gray.500"} fontSize="md">
-                                                {pet_type || "Pet Type"}
-                                            </Text>
+                                            <Text color={pet_type ? "black" : "gray.500"} fontSize="md">{pet_type || "Pet Type"}</Text>
                                             <MdKeyboardArrowDown color="gray" size="20px" />
                                         </Flex>
                                     </MenuButton>
@@ -350,17 +317,7 @@ export default function MyPet() {
                                         {["Cat", "Dog"].map((opt, index, arr) => {
                                             const isSelected = pet_type === opt;
                                             return (
-                                                <MenuItem
-                                                    key={opt}
-                                                    onClick={() => setPet_type(opt)}
-                                                    bg={isSelected ? "Primary.100" : "white"}
-                                                    _hover={{ bg: "Primary.50" }}
-                                                    color="Primary.900"
-                                                    fontWeight={isSelected ? "bold" : "medium"}
-                                                    borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                                                    borderColor="Primary.300"
-                                                    py={3}
-                                                >
+                                                <MenuItem key={opt} onClick={() => setPet_type(opt)} bg={isSelected ? "Primary.100" : "white"} _hover={{ bg: "Primary.50" }} color="Primary.900" fontWeight={isSelected ? "bold" : "medium"} borderBottom={index !== arr.length - 1 ? "1px solid" : "none"} borderColor="Primary.300" py={3}>
                                                     {opt}
                                                 </MenuItem>
                                             );
@@ -368,16 +325,12 @@ export default function MyPet() {
                                     </MenuList>
                                 </Menu>
                             </Box>
-
-                            {/* CUSTOM DROPDOWN: Gender */}
                             <Box>
                                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Gender</Text>
                                 <Menu matchWidth>
                                     <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.800" borderRadius="md" px="16px" cursor="pointer" alignItems="center">
                                         <Flex justify="space-between" align="center" h="100%">
-                                            <Text color={pet_gender ? "black" : "gray.500"} fontSize="md">
-                                                {pet_gender || "Gender"}
-                                            </Text>
+                                            <Text color={pet_gender ? "black" : "gray.500"} fontSize="md">{pet_gender || "Gender"}</Text>
                                             <MdKeyboardArrowDown color="gray" size="20px" />
                                         </Flex>
                                     </MenuButton>
@@ -385,17 +338,7 @@ export default function MyPet() {
                                         {["Male", "Female"].map((opt, index, arr) => {
                                             const isSelected = pet_gender === opt;
                                             return (
-                                                <MenuItem
-                                                    key={opt}
-                                                    onClick={() => setPet_gender(opt)}
-                                                    bg={isSelected ? "Primary.100" : "white"}
-                                                    _hover={{ bg: "Primary.50" }}
-                                                    color="Primary.900"
-                                                    fontWeight={isSelected ? "bold" : "medium"}
-                                                    borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
-                                                    borderColor="Primary.300"
-                                                    py={3}
-                                                >
+                                                <MenuItem key={opt} onClick={() => setPet_gender(opt)} bg={isSelected ? "Primary.100" : "white"} _hover={{ bg: "Primary.50" }} color="Primary.900" fontWeight={isSelected ? "bold" : "medium"} borderBottom={index !== arr.length - 1 ? "1px solid" : "none"} borderColor="Primary.300" py={3}>
                                                     {opt}
                                                 </MenuItem>
                                             );
@@ -403,7 +346,6 @@ export default function MyPet() {
                                     </MenuList>
                                 </Menu>
                             </Box>
-
                         </Flex>
                     </ModalBody>
                     <ModalFooter borderTop="1px solid" borderColor="gray.100" mt={4}>
@@ -412,6 +354,32 @@ export default function MyPet() {
                         </Button>
                         <Button bg="Primary.800" color="white" onClick={savePet} isDisabled={isLoading} _hover={{ opacity: 0.9 }}>
                             {isLoading ? "Saving..." : "Save"}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* --- CONFIRMATION MODAL FOR DELETION --- */}
+            <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
+                <ModalOverlay bg="blackAlpha.600" />
+                <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
+                    <ModalBody>
+                        <Flex justify="center" mb={4}>
+                            <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
+                                <MdWarning size="32px" />
+                            </Flex>
+                        </Flex>
+                        <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Pet Profile?</Text>
+                        <Text color="Primary.800" fontSize="sm" mb={4}>
+                            Are you absolutely sure you want to delete this pet? This action cannot be undone.
+                        </Text>
+                    </ModalBody>
+                    <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
+                        <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDelete}>
+                            Cancel
+                        </Button>
+                        <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={deletePet} _hover={{ bg: "red.600" }}>
+                            Delete
                         </Button>
                     </ModalFooter>
                 </ModalContent>

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { CacheContext } from "../context/CacheContext.jsx";
 import DefaultPet from "../images/defaultPet.jpeg";
+const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
   "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
@@ -79,7 +80,7 @@ export default function QuickNotes() {
           setPets(cachedPets);
         }
 
-        const response = await fetch(`http://localhost:4000/api/pets/owner/${ownerData.owner_id}`);
+        const response = await fetch(`${URL_Name}/api/pets/owner/${ownerData.owner_id}`);
         const result = await response.json();
 
         if (response.ok) {
@@ -167,7 +168,7 @@ export default function QuickNotes() {
         petFormData.append('pet_gender', gender);
         if (petImage) petFormData.append('pet_image', petImage);
 
-        const petResponse = await fetch('http://localhost:4000/api/pets', {
+        const petResponse = await fetch(`${URL_Name}/api/pets`, {
           method: 'POST',
           body: petFormData
         });
@@ -193,7 +194,7 @@ export default function QuickNotes() {
       if (note) recordFormData.append('record_note', note);
       if (photo) recordFormData.append('record_image', photo);
 
-      const recordResponse = await fetch('http://localhost:4000/api/medical-records', {
+      const recordResponse = await fetch(`${URL_Name}/api/medical-records`, {
         method: 'POST',
         body: recordFormData
       });
@@ -317,7 +318,7 @@ export default function QuickNotes() {
       <Menu matchWidth>
         <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.800" borderRadius="md" px="16px" cursor="pointer" alignItems="center">
           <Flex justify="space-between" align="center" h="100%">
-            <Text color={type ? "Primary.800" : "gray.500"} fontSize="md">
+            <Text color="Primary.800" fontSize="md">
               {type || "Consultation Type"}
             </Text>
             <MdKeyboardArrowDown color="var(--chakra-colors-Primary-800)" size="20px" />
