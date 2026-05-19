@@ -19,6 +19,7 @@ import ForgotPasswordPhone from "./pages/ForgotPasswordPhone";
 import OTPVerification from "./pages/OTPVerification";
 import ResetPassword from "./pages/ResetPassword";
 import UserProfile from "./pages/UserProfile.jsx";
+import VetClinicDetail from "./pages/VetClinicDetail.jsx";
 import { CacheProvider } from './context/CacheContext.jsx';
 
 function App() {
@@ -55,6 +56,8 @@ function App() {
           <Route path="/mypet/:id" element={<MedicationDetail />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/vet" element={<Vet />} />
+          <Route path="/vet/:id" element={<VetClinicDetail />} />
+          <Route path="/vet-clinic/:clinic_id" element={<VetClinicDetail />} />
         </Routes>
         </Layout>
       </>

@@ -2,6 +2,7 @@ import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Icon, Div
 import { useState, useEffect, useContext, Fragment } from "react";
 import { MdFilterAlt, MdSearch, MdStar, MdStarBorder, MdLocationOn } from "react-icons/md";
 import { CacheContext } from '../context/CacheContext.jsx';
+import { useNavigate } from "react-router-dom";
 import DogHouse from "../images/DogHouse.jpeg";
 
 export default function Vet() {
@@ -157,6 +158,8 @@ export default function Vet() {
         clinic.clinic_name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const navigate = useNavigate();
+
     return (
         <Flex direction="column" minH="100vh" p="20px">
             {/* FIXED: Increased Header size to 2xl and made it bold */}
@@ -208,7 +211,16 @@ export default function Vet() {
                                         </Text>
                                     )}
 
-                                    <Flex align="center" justify="space-between" my={2} w="100%">
+                                    <Flex 
+                                      align="center" 
+                                      justify="space-between" 
+                                      my={2} 
+                                      w="100%"
+                                      cursor="pointer"
+                                      onClick={() => navigate(`/vet-clinic/${clinic.clinic_id}`, { state: { distance_km: clinic.distance_km } })}
+                                      _hover={{ opacity: 0.8 }}
+                                      transition="opacity 0.2s"
+                                    >
                                         <Flex align="center" gap={4} flex="1" overflow="hidden">
                                             <Image
                                                 src={clinic.clinic_photo_cloudinary_url || DogHouse}
@@ -240,7 +252,7 @@ export default function Vet() {
                                             </Flex>
                                         </Flex>
 
-                                        <Box pl={4}>
+                                        <Box pl={4} onClick={(e) => e.stopPropagation()}>
                                             <Icon
                                                 as={clinic.isFavorite ? MdStar : MdStarBorder}
                                                 boxSize={8}
