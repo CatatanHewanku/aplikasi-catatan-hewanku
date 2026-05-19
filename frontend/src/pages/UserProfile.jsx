@@ -1,7 +1,7 @@
 import { Flex, Box, Text, Image, Button, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
-import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt, MdPets } from "react-icons/md";
-import { useNavigate } from "react-router-dom"; 
+import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt, MdPets, MdClose } from "react-icons/md";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 
 export default function UserProfile() {
@@ -10,52 +10,55 @@ export default function UserProfile() {
     const [owner_name, setOwner_name] = useState("");
     const [owner_email, setOwner_email] = useState("");
     const [owner_phone_number, setOwner_phone_number] = useState("");
-    const [password, setPassword] = useState("");
     const [owner_image_url, setOwner_image_url] = useState("");
+    const [selectedFile, setSelectedFile] = useState(null);
     const [isEdit, setIsEdit] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Save initial state so we can revert if they press "Cancel"
+    const [initialData, setInitialData] = useState({});
+
     useEffect(() => {
         const ownerData = JSON.parse(localStorage.getItem("owner"));
-        
+
         if (ownerData) {
             setOwner_name(ownerData.owner_name || "");
             setOwner_email(ownerData.owner_email || "");
             setOwner_phone_number(ownerData.owner_phone_number || "");
             setOwner_image_url(ownerData.owner_image_url || "");
+            
+            setInitialData({
+                name: ownerData.owner_name || "",
+                email: ownerData.owner_email || "",
+                phone: ownerData.owner_phone_number || "",
+                image: ownerData.owner_image_url || ""
+            });
         }
     }, []);
 
-    const handleImageUpload = async (e) => {
+    const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setOwner_image_url(reader.result);
-        };
-        reader.readAsDataURL(file);
-
-        try {
-            const ownerData = JSON.parse(localStorage.getItem("owner"));
-            if (ownerData?.owner_id) {
-                const formData = new FormData();
-                formData.append('image', file);
-
-                const response = await fetch(`http://localhost:4000/api/owners/${ownerData.owner_id}/upload-image`, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setOwner_image_url(data.image_url);
-                    console.log("Image uploaded to Cloudinary:", data.image_url);
-                }
-            }
-        } catch (error) {
-            console.log("Backend image upload failed:", error);
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert("Invalid file format! Please upload only JPG or PNG images.");
+            e.target.value = null;
+            return;
         }
+
+        setSelectedFile(file);
+        setOwner_image_url(URL.createObjectURL(file)); 
+    };
+
+    const handleCancel = () => {
+        // Revert back to original data
+        setOwner_name(initialData.name);
+        setOwner_email(initialData.email);
+        setOwner_phone_number(initialData.phone);
+        setOwner_image_url(initialData.image);
+        setSelectedFile(null);
+        setIsEdit(false);
     };
 
     const handleSave = async () => {
@@ -68,42 +71,48 @@ export default function UserProfile() {
                 return;
             }
 
-            const updateData = {
-                owner_name,
-                owner_email,
-                owner_phone_number
-            };
+            const formData = new FormData();
+            formData.append("owner_name", owner_name);
+            formData.append("owner_email", owner_email);
+            formData.append("owner_phone_number", owner_phone_number);
 
-            if (password) {
-                updateData.password = password;
+            if (selectedFile) {
+                formData.append("image", selectedFile);
             }
 
             const response = await fetch(
                 `http://localhost:4000/api/owners/${ownerData.owner_id}`,
                 {
                     method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(updateData)
+                    body: formData
                 }
             );
 
             const result = await response.json();
 
             if (response.ok) {
+                const finalImageUrl = result.data?.owner_image_url || owner_image_url;
+
                 const updatedOwner = {
                     ...ownerData,
                     owner_name,
                     owner_email,
                     owner_phone_number,
-                    owner_image_url
+                    owner_image_url: finalImageUrl
                 };
                 localStorage.setItem("owner", JSON.stringify(updatedOwner));
                 
+                // Update our fallback data
+                setInitialData({
+                    name: owner_name,
+                    email: owner_email,
+                    phone: owner_phone_number,
+                    image: finalImageUrl
+                });
+
                 alert("Profile updated successfully");
                 setIsEdit(false);
-                setPassword("");
+                setSelectedFile(null);
             } else {
                 alert(result.message || "Failed to update profile");
             }
@@ -124,31 +133,37 @@ export default function UserProfile() {
             localStorage.removeItem("token");
             localStorage.removeItem("owner");
         }
-        
+
         window.location.href = "/";
     };
 
     return (
         <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="40px">
-            <Box position="relative" bg="white" w="100%" maxW="380px" minH="750px" borderRadius="30px" px="28px" pt="30px" pb="40px" boxShadow="lg">
-                <Flex justify="space-between" mb="20px">
-                    <Box color="Primary.800" cursor="pointer" onClick={() => navigate(-1)}>
-                        <MdArrowBack size="30px" />
+            <Box position="relative" bg="white" w="100%" maxW="380px" borderRadius="30px" px="28px" pt="30px" pb="40px" boxShadow="lg">
+                
+                {/* HEADER ROW */}
+                <Flex justify="space-between" align="center" mb="20px">
+                    <Box color="Primary.800" cursor="pointer" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
+                        <MdArrowBack size="28px" />
                     </Box>
-                    {!isEdit && (
-                        <Text color="Primary.800" cursor="pointer" fontWeight="medium" onClick={() => setIsEdit(true)}>
+                    <Text color="Primary.900" fontWeight="bold" fontFamily="heading" fontSize="xl">
+                        User Profile
+                    </Text>
+                    {!isEdit ? (
+                        <Text color="Primary.800" cursor="pointer" fontWeight="bold" fontSize="md" onClick={() => setIsEdit(true)}>
                             Edit
+                        </Text>
+                    ) : (
+                        <Text color="red.500" cursor="pointer" fontWeight="bold" fontSize="md" onClick={handleCancel}>
+                            Cancel
                         </Text>
                     )}
                 </Flex>
 
-                <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="2xl" mb="30px">
-                    User Profile
-                </Text>
-
-                <Flex justify="center" mb="30px">
-                    <Box position="relative" cursor={isEdit ? "pointer" : "default"}>
-                        <Flex boxSize="120px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden">
+                {/* PROFILE PICTURE */}
+                <Flex justify="center" mb="30px" mt="20px">
+                    <Box position="relative" cursor={isEdit ? "pointer" : "default"} transition="all 0.2s" _hover={isEdit ? { transform: "scale(1.05)" } : {}}>
+                        <Flex boxSize="120px" borderRadius="full" bg="Primary.100" justify="center" align="center" overflow="hidden" boxShadow="sm" border="4px solid white">
                             {owner_image_url ? (
                                 <Image src={owner_image_url} boxSize="120px" borderRadius="full" objectFit="cover" />
                             ) : (
@@ -159,58 +174,119 @@ export default function UserProfile() {
                         </Flex>
                         {isEdit && (
                             <>
-                                <Flex position="absolute" bottom="0" right="0" bg="Primary.800" boxSize="36px" borderRadius="full" justify="center" align="center" color="white" boxShadow="md">
-                                    <MdCameraAlt size="20px" />
+                                <Flex position="absolute" bottom="0" right="0" bg="Primary.800" boxSize="36px" borderRadius="full" justify="center" align="center" color="white" boxShadow="md" border="3px solid white">
+                                    <MdCameraAlt size="18px" />
                                 </Flex>
-                                <Input type="file" accept="image/*" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleImageUpload} />
+                                <Input type="file" accept="image/*" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleImageChange} />
                             </>
                         )}
                     </Box>
                 </Flex>
 
-                <Flex direction="column" gap={4}>
-                    <InputGroup>
-                        <InputLeftElement pointerEvents="none" color="Primary.800">
-                            <MdPerson />
-                        </InputLeftElement>
-                        <Input value={owner_name} onChange={(e) => setOwner_name(e.target.value.replace(/[^A-Za-z\s]/g, ""))} isReadOnly={!isEdit} bg="Neutral.100" borderRadius="30px" border="1px" borderColor="Primary.800" />
-                    </InputGroup>
+                {/* FORM FIELDS */}
+                <Flex direction="column" gap={5}>
+                    
+                    <Box>
+                        <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Full Name</Text>
+                        <InputGroup>
+                            <InputLeftElement pointerEvents="none" color="Primary.800">
+                                <MdPerson />
+                            </InputLeftElement>
+                            <Input 
+                                value={owner_name} 
+                                onChange={(e) => setOwner_name(e.target.value.replace(/[^A-Za-z\s]/g, ""))} 
+                                isReadOnly={!isEdit} 
+                                bg={isEdit ? "white" : "Neutral.100"} 
+                                borderRadius="30px" 
+                                border={isEdit ? "1px solid" : "none"} 
+                                borderColor="Primary.300"
+                                focusBorderColor="Primary.800"
+                                fontWeight="medium"
+                                color="Primary.900"
+                                transition="all 0.2s"
+                            />
+                        </InputGroup>
+                    </Box>
 
-                    <InputGroup>
-                        <InputLeftElement pointerEvents="none" color="Primary.800">
-                            <MdEmail />
-                        </InputLeftElement>
-                        <Input value={owner_email} onChange={(e) => setOwner_email(e.target.value)} isReadOnly={!isEdit} bg="Neutral.100" borderRadius="30px" border="1px" borderColor="Primary.800" />
-                    </InputGroup>
+                    <Box>
+                        <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Email Address</Text>
+                        <InputGroup>
+                            <InputLeftElement pointerEvents="none" color="Primary.800">
+                                <MdEmail />
+                            </InputLeftElement>
+                            <Input 
+                                value={owner_email} 
+                                onChange={(e) => setOwner_email(e.target.value)} 
+                                isReadOnly={!isEdit} 
+                                bg={isEdit ? "white" : "Neutral.100"} 
+                                borderRadius="30px" 
+                                border={isEdit ? "1px solid" : "none"} 
+                                borderColor="Primary.300"
+                                focusBorderColor="Primary.800"
+                                fontWeight="medium"
+                                color="Primary.900"
+                                transition="all 0.2s"
+                            />
+                        </InputGroup>
+                    </Box>
 
-                    <InputGroup>
-                        <InputLeftElement pointerEvents="none" color="Primary.800">
-                            <MdPhone />
-                        </InputLeftElement>
-                        <Input value={owner_phone_number} onChange={(e) => setOwner_phone_number(e.target.value.replace(/\D/g, ""))} isReadOnly={!isEdit} bg="Neutral.100" borderRadius="30px" border="1px" borderColor="Primary.800" />
-                    </InputGroup>
+                    <Box>
+                        <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Phone Number</Text>
+                        <InputGroup>
+                            <InputLeftElement pointerEvents="none" color="Primary.800">
+                                <MdPhone />
+                            </InputLeftElement>
+                            <Input 
+                                value={owner_phone_number} 
+                                onChange={(e) => setOwner_phone_number(e.target.value.replace(/\D/g, ""))} 
+                                isReadOnly={!isEdit} 
+                                bg={isEdit ? "white" : "Neutral.100"} 
+                                borderRadius="30px" 
+                                border={isEdit ? "1px solid" : "none"} 
+                                borderColor="Primary.300"
+                                focusBorderColor="Primary.800"
+                                fontWeight="medium"
+                                color="Primary.900"
+                                transition="all 0.2s"
+                            />
+                        </InputGroup>
+                    </Box>
 
-                    <InputGroup>
-                        <InputLeftElement pointerEvents="none" color="Primary.800">
-                            <MdLock />
-                        </InputLeftElement>
-                        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} isReadOnly={!isEdit} bg="Neutral.100" borderRadius="30px" border="1px" borderColor="Primary.800" />
-                    </InputGroup>
+                    {/* CHANGE PASSWORD BUTTON */}
+                    {isEdit && (
+                        <Button 
+                            w="100%" 
+                            h="45px" 
+                            bg="transparent" 
+                            border="1px solid" 
+                            borderColor="Primary.800" 
+                            color="Primary.800" 
+                            borderRadius="30px" 
+                            leftIcon={<MdLock size="20px"/>}
+                            onClick={() => navigate("/reset-password")}
+                            _hover={{ bg: "Primary.100" }}
+                            fontWeight="bold"
+                        >
+                            Change Password
+                        </Button>
+                    )}
                 </Flex>
 
-                {isEdit && (
-                    <Flex justify="center" mt="40px">
-                        <Button w="80%" h="42px" bg="Primary.800" color="white" borderRadius="30px" fontSize="xl" _hover={{ opacity: 0.9 }} onClick={handleSave} isDisabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save"}
+                {/* ACTION BUTTONS */}
+                {/* FIXED: Reduced mt from "40px" to "20px" to tighten the layout */}
+                {isEdit ? (
+                    <Flex justify="center" mt="20px">
+                        <Button w="100%" h="50px" bg="Primary.800" color="white" borderRadius="30px" fontSize="lg" fontWeight="bold" _hover={{ opacity: 0.9 }} onClick={handleSave} isDisabled={isLoading} boxShadow="md">
+                            {isLoading ? "Saving..." : "Save Changes"}
+                        </Button>
+                    </Flex>
+                ) : (
+                    <Flex justify="center" mt="20px">
+                        <Button variant="ghost" color="red.500" fontWeight="bold" onClick={handleLogout} _hover={{ bg: "red.50" }} borderRadius="30px" w="100%">
+                            Log Out
                         </Button>
                     </Flex>
                 )}
-
-                <Flex justify="center" mt="20px">
-                    <Button variant="ghost" color="red.400" onClick={handleLogout}>
-                        Logout
-                    </Button>
-                </Flex>
             </Box>
         </Flex>
     );

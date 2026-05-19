@@ -1,5 +1,5 @@
 import { OwnerModel } from "../models/OwnerModel.js"
-import { uploadToCloudinary } from "../config/cloudinary.js"
+import { uploadToCloudinary, deleteFromCloudinary } from "../config/cloudinary.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
@@ -27,8 +27,8 @@ export class OwnerController {
       const hashedPassword = await bcrypt.hash(password, 10)
 
       const result = await OwnerModel.createOwner(
-        owner_name, 
-        owner_email, 
+        owner_name,
+        owner_email,
         hashedPassword,
         owner_phone_number
       )
@@ -47,7 +47,7 @@ export class OwnerController {
         await UserSessionModel.createSession(result.owner_id, device_id, token, expiresAt)
       }
 
-      res.status(201).json({ 
+      res.status(201).json({
         message: "User created successfully",
         token: token,
         owner: {
@@ -151,7 +151,7 @@ export class OwnerController {
       const name = owner_name || currentOwner.owner_name
       const email = owner_email || currentOwner.owner_email
       const phone = owner_phone_number || currentOwner.owner_phone_number
-      let imageUrl = currentOwner.owner_image_url
+      let imageUrl = currentOwner ? currentOwner.owner_image_url : null
 
       // Check for duplicate email (if email is being changed)
       if (email && email !== currentOwner.owner_email) {
@@ -171,8 +171,12 @@ export class OwnerController {
 
       // If new image uploaded, save to Cloudinary
       if (req.file) {
-        const cloudinaryResult = await uploadToCloudinary(req.file, "catatanhewanku/owners")
-        imageUrl = cloudinaryResult.secure_url
+        if (currentOwner && currentOwner.owner_image_url) {
+          await deleteFromCloudinary(currentOwner.owner_image_url);
+        }
+
+        const cloudinaryResult = await uploadToCloudinary(req.file, "catatanhewanku/owners");
+        imageUrl = cloudinaryResult.secure_url;
       }
 
       // Update all fields
@@ -184,7 +188,7 @@ export class OwnerController {
         await OwnerModel.updatePassword(owner_id, hashedPassword)
       }
 
-      res.status(200).json({ 
+      res.status(200).json({
         message: "User updated successfully",
         data: { owner_id, owner_name: name, owner_email: email, owner_phone_number: phone, owner_image_url: imageUrl }
       })
@@ -202,7 +206,18 @@ export class OwnerController {
         return res.status(400).json({ message: "User ID is required" })
       }
 
+      const currentOwner = await OwnerModel.getOwnerById(owner_id);
+
+      if (!currentOwner) {
+        return res.status(404).json({ message: "Owner not found" });
+      }
+
+      if (currentOwner.owner_image_url) {
+        await deleteFromCloudinary(currentOwner.owner_image_url);
+      }
+
       const result = await OwnerModel.deleteOwner(owner_id)
+
       res.status(200).json({ message: "User deleted successfully", data: result })
     } catch (err) {
       res.status(500).json({ message: err.message })
@@ -227,7 +242,7 @@ export class OwnerController {
       // Update owner with image URL
       await OwnerModel.updateOwnerImage(owner_id, result.secure_url)
 
-      res.status(200).json({ 
+      res.status(200).json({
         message: "Image uploaded successfully",
         image_url: result.secure_url
       })

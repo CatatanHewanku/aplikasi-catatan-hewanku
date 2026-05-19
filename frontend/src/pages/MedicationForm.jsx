@@ -1,7 +1,13 @@
-import { Flex, Box, Text, Input, Textarea, Select, Button } from "@chakra-ui/react";
-import { MdArrowBack, MdOutlinePhotoCamera } from "react-icons/md";
+import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, ModalContent, IconButton, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
+import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+
+const consultationOptions = [
+  "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
+  "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", 
+  "Follow-up", "Emergency"
+];
 
 export default function MedicationForm() {
   const navigate = useNavigate();
@@ -18,6 +24,9 @@ export default function MedicationForm() {
   const [record_image, setRecord_image] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for the Image Zoom Modal
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
 
   useEffect(() => {
     if (!logId) return;
@@ -52,9 +61,16 @@ export default function MedicationForm() {
   const handlePhoto = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      alert("Invalid file format! Please upload only JPG or PNG images.");
+      e.target.value = null;
+      return;
+    }
+
     setRecord_image(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhotoPreview(reader.result);
@@ -67,7 +83,7 @@ export default function MedicationForm() {
       alert("Please fill in all required fields");
       return;
     }
-    
+
     if (record_consultation_type === "Vaccination" && !record_image) {
       alert("Photo is required for Vaccination records");
       return;
@@ -88,10 +104,10 @@ export default function MedicationForm() {
         formData.append('record_image', record_image);
       }
 
-      const url = isEditMode 
+      const url = isEditMode
         ? `http://localhost:4000/api/medical-records/${logId}`
         : 'http://localhost:4000/api/medical-records';
-      
+
       const method = isEditMode ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
@@ -103,7 +119,7 @@ export default function MedicationForm() {
 
       if (response.ok) {
         alert(isEditMode ? "Medical record updated successfully" : "Medical record created successfully");
-        navigate(`/mypet/${id}`);
+        navigate(-1);
       } else {
         alert(result.message || "Failed to save medical record");
       }
@@ -129,7 +145,7 @@ export default function MedicationForm() {
 
       if (response.ok) {
         alert("Medical record deleted successfully");
-        navigate(`/mypet/${id}`);
+        navigate(-1);
       } else {
         alert(result.message || "Failed to delete medical record");
       }
@@ -141,50 +157,83 @@ export default function MedicationForm() {
 
   return (
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px">
-      <Flex justify="flex-end">
+      
+      {/* STANDARD HEADER */}
+      <Flex justify="space-between" align="center" pt="20px" pb="10px">
         <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)}>
           <MdArrowBack size="28px" />
         </Box>
+        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
+          Medication Form
+        </Text>
+        <Box w="28px" /> 
       </Flex>
 
-      <Text fontSize="4xl" fontWeight="medium" color="Primary.800" mb="2">
-        Medication Form
-      </Text>
-
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800">
+        <Text mb="6px" color="Primary.800" fontWeight="medium">
           Examination Date
         </Text>
         <Input type="date" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(e.target.value)} />
       </Box>
 
+      {/* CHAKRA MENU DROPDOWN FIX */}
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800">
+        <Text mb="6px" color="Primary.800" fontWeight="medium">
           Consultation Type
         </Text>
-        <Select bg="Primary.100" border="none" placeholder="Select an Option" value={record_consultation_type} onChange={(e) => setRecord_consultation_type(e.target.value)}>
-          <option value="Vaccination">Vaccination</option>
-          <option value="General Check Up">General Check Up</option>
-          <option value="Dental Care">Dental Care</option>
-          <option value="Parasite Control">Parasite Control</option>
-          <option value="Nutrition">Nutrition</option>
-          <option value="Illness/Treatment">Illness/Treatment</option>
-          <option value="Surgery">Surgery</option>
-          <option value="Prescription Refill">Prescription Refill</option>
-          <option value="Follow-up">Follow-up</option>
-          <option value="Emergency">Emergency</option>
-        </Select>
+        <Menu matchWidth>
+          <MenuButton 
+            as={Flex} 
+            w="100%" 
+            h="40px" 
+            bg="Primary.100" 
+            borderRadius="md" 
+            px="16px" 
+            cursor="pointer"
+            alignItems="center"
+          >
+            <Flex justify="space-between" align="center" h="100%">
+              <Text color={record_consultation_type ? "black" : "gray.500"} fontSize="md">
+                {record_consultation_type || "Select an Option"}
+              </Text>
+              <MdKeyboardArrowDown color="gray" size="20px" />
+            </Flex>
+          </MenuButton>
+          
+          {/* FIXED: Removed overflow="hidden" so scrolling works perfectly again */}
+          <MenuList bg="Primary.100" borderColor="Primary.300" maxH="250px" overflowY="auto" zIndex={10} p={0} borderRadius="md" boxShadow="lg">
+            {consultationOptions.map((opt, index) => {
+              const isSelected = record_consultation_type === opt;
+              
+              return (
+                <MenuItem 
+                  key={opt} 
+                  onClick={() => setRecord_consultation_type(opt)} 
+                  bg={isSelected ? "Primary.300" : "Primary.100"} // Different background for selected
+                  _hover={{ bg: "Primary.200" }}
+                  color="Primary.900"
+                  fontWeight={isSelected ? "bold" : "medium"} // Bold font for selected
+                  borderBottom={index !== consultationOptions.length - 1 ? "1px solid" : "none"}
+                  borderColor="Primary.300" 
+                  py={3}
+                >
+                  {opt}
+                </MenuItem>
+              );
+            })}
+          </MenuList>
+        </Menu>
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800">
+        <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinarian
         </Text>
         <Input bg="Primary.100" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(e.target.value)} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800">
+        <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinary Clinic
         </Text>
         <Input bg="Primary.100" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(e.target.value)} />
@@ -192,13 +241,13 @@ export default function MedicationForm() {
 
       <Flex gap={4}>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
-          <Text mb="6px" color="Primary.800">
+          <Text mb="6px" color="Primary.800" fontWeight="medium">
             Weight
           </Text>
           <Input bg="Primary.100" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(e.target.value)} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
-          <Text mb="6px" color="Primary.800">
+          <Text mb="6px" color="Primary.800" fontWeight="medium">
             Temperature
           </Text>
           <Input bg="Primary.100" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(e.target.value)} />
@@ -206,17 +255,17 @@ export default function MedicationForm() {
       </Flex>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800">
+        <Text mb="6px" color="Primary.800" fontWeight="medium">
           Medical Note
         </Text>
-        <Textarea 
-          bg="Primary.100" 
-          border="none" 
-          resize="none" 
-          h="180px" 
-          maxLength={1000} 
-          value={record_note} 
-          onChange={(e) => setRecord_note(e.target.value)} 
+        <Textarea
+          bg="Primary.100"
+          border="none"
+          resize="none"
+          h="180px"
+          maxLength={1000}
+          value={record_note}
+          onChange={(e) => setRecord_note(e.target.value)}
         />
         <Flex justify="flex-end">
           <Text fontSize="sm" color="Primary.800" mt="4px">
@@ -225,93 +274,141 @@ export default function MedicationForm() {
         </Flex>
       </Box>
 
-      <Flex align="center" gap={3}>
-        <Box as="label" cursor="pointer">
-          <Input 
-            type="file" 
-            accept="image/*" 
-            display="none" 
-            onChange={handlePhoto} 
-          />
-          <Flex 
-            w="50px" 
-            h="50px" 
-            borderRadius="12px" 
-            border="1px" 
-            borderColor="Primary.800" 
-            bg="white" 
-            align="center" 
-            justify="center" 
-            color="Primary.800"
-          >
-            <MdOutlinePhotoCamera size="24px" />
-          </Flex>
-        </Box>
+      <Flex direction="column" gap={4}>
+        <Flex align="center" gap={3}>
+          <Box as="label" cursor="pointer">
+            <Input
+              type="file"
+              accept=".jpg, .jpeg, .png, image/jpeg, image/png"
+              display="none"
+              onChange={handlePhoto}
+            />
+            <Flex
+              w="50px"
+              h="50px"
+              borderRadius="12px"
+              border="1px"
+              borderColor="Primary.800"
+              bg="white"
+              align="center"
+              justify="center"
+              color="Primary.800"
+            >
+              <MdOutlinePhotoCamera size="24px" />
+            </Flex>
+          </Box>
 
-        <Box>
-          <Text fontSize="sm" color="Primary.800" fontWeight="medium">
-            Required for Vaccination!
-          </Text>
-          <Text fontSize="xs" color="Primary.700">
-            Please attach photo or sticker of vaccination
-          </Text>
-        </Box>
+          <Box>
+            <Text fontSize="sm" color="Primary.800" fontWeight="medium">
+              Required for Vaccination!
+            </Text>
+            <Text fontSize="xs" color="Primary.700">
+              Please attach photo or sticker of vaccination
+            </Text>
+          </Box>
+        </Flex>
+
+        {photoPreview && (
+          <Box position="relative" w="120px" h="120px" cursor="pointer" onClick={() => setIsImageZoomOpen(true)} _hover={{ opacity: 0.9 }}>
+            <Image
+              src={photoPreview}
+              alt="Attachment preview"
+              objectFit="cover"
+              w="100%"
+              h="100%"
+              borderRadius="12px"
+              border="2px solid"
+              borderColor="Primary.800"
+            />
+          </Box>
+        )}
       </Flex>
 
+      {/* ACTION BUTTONS */}
       {isEditMode ? (
         <Flex direction="column" gap={3} mt="4">
           <Flex gap={4}>
-            <Button 
-              flex="1" 
-              borderRadius="30px" 
-              h="50px" 
-              bg="white" 
-              border="1px" 
-              borderColor="Primary.800" 
-              color="Primary.800" 
+            <Button
+              flex="1"
+              borderRadius="30px"
+              h="50px"
+              bg="white"
+              border="1px"
+              borderColor="Primary.800"
+              color="Primary.800"
               onClick={() => navigate(-1)}
             >
               Cancel
             </Button>
-            <Button 
-              flex="1" 
-              bg="Primary.800" 
-              color="white" 
-              borderRadius="30px" 
-              h="50px" 
-              _hover={{ opacity: 0.9 }} 
+            <Button
+              flex="1"
+              bg="Primary.800"
+              color="white"
+              borderRadius="30px"
+              h="50px"
+              _hover={{ opacity: 0.9 }}
               onClick={handleSubmit}
               isDisabled={isLoading}
             >
               {isLoading ? "Saving..." : "Save"}
             </Button>
           </Flex>
-          <Button 
-            borderRadius="25px" 
-            bg="Neutral.100" 
-            border="1px" 
-            borderColor="Primary.800" 
-            color="red.500" 
-            fontWeight="medium" 
+          <Button
+            borderRadius="25px"
+            bg="Neutral.100"
+            border="1px"
+            borderColor="Primary.800"
+            color="red.500"
+            fontWeight="medium"
             onClick={handleDelete}
           >
             Delete This Log
           </Button>
         </Flex>
       ) : (
-        <Button 
-          mt="4" 
-          bg="Primary.800" 
-          color="white" 
-          borderRadius="30px" 
-          h="50px" 
-          fontSize="xl" 
+        <Button
+          mt="4"
+          bg="Primary.800"
+          color="white"
+          borderRadius="30px"
+          h="50px"
+          fontSize="xl"
           onClick={handleSubmit}
           isDisabled={isLoading}
         >
           {isLoading ? "Submitting..." : "Submit"}
         </Button>
       )}
+
+      {/* --- IMAGE ZOOM MODAL --- */}
+      <Modal isOpen={isImageZoomOpen} onClose={() => setIsImageZoomOpen(false)} isCentered size="xl">
+        <ModalOverlay bg="blackAlpha.800" />
+        <ModalContent bg="transparent" boxShadow="none" mx={4} position="relative">
+          <IconButton 
+            icon={<MdClose size="24px" />} 
+            isRound 
+            bg="white" 
+            color="Primary.900" 
+            size="md" 
+            position="absolute"
+            top="-50px"
+            right="0"
+            zIndex="10"
+            onClick={() => setIsImageZoomOpen(false)} 
+            aria-label="Close image"
+            _hover={{ bg: "gray.200", transform: "scale(1.05)" }}
+            transition="all 0.2s"
+          />
+          <Image 
+            src={photoPreview} 
+            w="100%" 
+            maxH="80vh" 
+            objectFit="contain" 
+            borderRadius="md" 
+          />
+        </ModalContent>
+      </Modal>
+
     </Flex>
   );
 }

@@ -9,6 +9,7 @@ import vetClinicRoutes from "./routes/vetClinicRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
 import favoriteClinicRoutes from "./routes/favoriteClinicRoutes.js"
 import medicalRecordRoutes from "./routes/medicalRecordRoutes.js"
+import reminderRoutes from "./routes/reminderRoutes.js"
 
 const PORT = process.env.PORT || 4000
 const app = express()
@@ -53,6 +54,7 @@ app.use("/api/pets", petRoutes)
 app.use("/api/vet-clinics", vetClinicRoutes)
 app.use("/api/favorites", favoriteClinicRoutes)
 app.use("/api/medical-records", medicalRecordRoutes)
+app.use("/api/reminder", reminderRoutes)
 
 app.use((err, req, res, next) => {
   res.status(500).json({

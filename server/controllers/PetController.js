@@ -1,5 +1,5 @@
 import { PetModel } from "../models/PetModel.js"
-import { cloudinary } from "../config/cloudinary.js"
+import { uploadToCloudinary, deleteFromCloudinary } from "../config/cloudinary.js"
 import { Readable } from "stream"
 
 export class PetController {
@@ -11,20 +11,15 @@ export class PetController {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      // Handle image file upload to Cloudinary
+      // Handle image file upload to Cloudinary using the helper function
       let pet_image_url = null
       if (req.file) {
-        const uploadResult = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'catatanhewanku/pets', resource_type: 'auto' },
-            (error, result) => {
-              if (error) reject(error)
-              else resolve(result)
-            }
-          )
-          Readable.from(req.file.buffer).pipe(uploadStream)
-        })
-        pet_image_url = uploadResult.secure_url
+        try {
+          const result = await uploadToCloudinary(req.file, 'catatanhewanku/pets')
+          pet_image_url = result.secure_url
+        } catch (err) {
+          return res.status(500).json({ message: `Image upload failed: ${err.message}` })
+        }
       }
 
       const petData = await PetModel.createPet(owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
@@ -73,38 +68,35 @@ export class PetController {
     try {
       const { pet_id } = req.params
       const { pet_name, pet_type, pet_dob, pet_gender, pet_note } = req.body
+      const file = req.file
 
-      if (!pet_id) {
-        return res.status(400).json({ message: "Pet ID is required" })
-      }
-
+      if (!pet_id) return res.status(400).json({ message: "Pet ID is required" })
       if (!pet_name || !pet_type || !pet_dob || !pet_gender) {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      let pet_image_url = null
-      if (req.file) {
-        // Get existing pet to delete old image if it exists
-        const existingPet = await PetModel.getPetById(pet_id)
-        if (existingPet && existingPet.pet_image) {
-          const publicId = existingPet.pet_image.split('/').pop().split('.')[0]
-          await cloudinary.uploader.destroy(`pets/profile/${publicId}`)
-        }
+      const existingPet = await PetModel.getPetById(pet_id)
+      if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
-        // Upload new image
-        const uploadResult = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'catatanhewanku/pets', resource_type: 'auto' },
-            (error, result) => {
-              if (error) reject(error)
-              else resolve(result)
-            }
-          )
-          Readable.from(req.file.buffer).pipe(uploadStream)
-        })
-        pet_image_url = uploadResult.secure_url
+      // Define the single variable to hold our URL, defaulting to the old one
+      let pet_image_url = existingPet.pet_image
+
+      if (file) {
+        try {
+          // Delete old image if exists
+          if (existingPet.pet_image) {
+            await deleteFromCloudinary(existingPet.pet_image);
+          }
+          // Upload new image
+          const result = await uploadToCloudinary(file, 'catatanhewanku/pets')
+          // Save the new link to our one true variable!
+          pet_image_url = result.secure_url
+        } catch (err) {
+          return res.status(500).json({ message: `Image upload failed: ${err.message}` })
+        }
       }
 
+      // Now it passes the correctly updated URL to the database
       const petData = await PetModel.updatePet(pet_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
       res.status(200).json({ message: "Pet updated successfully", data: petData })
     } catch (err) {
@@ -116,8 +108,14 @@ export class PetController {
     try {
       const { pet_id } = req.params
 
-      if (!pet_id) {
-        return res.status(400).json({ message: "Pet ID is required" })
+      if (!pet_id) return res.status(400).json({ message: "Pet ID is required" })
+
+      const existingPet = await PetModel.getPetById(pet_id)
+      if (!existingPet) return res.status(404).json({ message: "Pet not found" })
+
+      // Delete image if exists
+      if (existingPet.pet_image) {
+        await deleteFromCloudinary(existingPet.pet_image);
       }
 
       const result = await PetModel.deletePet(pet_id)

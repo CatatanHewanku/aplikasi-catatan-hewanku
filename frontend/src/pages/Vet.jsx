@@ -9,7 +9,6 @@ export default function Vet() {
     const [clinics, setClinics] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Calculate distance between two coordinates (km)
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
         const R = 6371
         const dLat = (lat2 - lat1) * (Math.PI / 180)
@@ -50,7 +49,6 @@ export default function Vet() {
                         originalIndex: index
                     }));
 
-                    // Fetch user's favorite clinics
                     if (owner_id) {
                         try {
                             const favResponse = await fetch(`http://localhost:4000/api/favorites/owner/${owner_id}`);
@@ -68,7 +66,6 @@ export default function Vet() {
                         }
                     }
 
-                    // Request location and sort by distance
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
@@ -84,20 +81,17 @@ export default function Vet() {
                                     return parseFloat(a.distance_km) - parseFloat(b.distance_km);
                                 });
                                 setClinics(clinicsData);
-                                // 3. Update cache using the new key
                                 updateCache(cacheKey, clinicsData);
                             },
                             () => {
                                 clinicsData.sort((a, b) => b.isFavorite - a.isFavorite);
                                 setClinics(clinicsData);
-                                // 4. Update cache using the new key
                                 updateCache(cacheKey, clinicsData);
                             }
                         );
                     } else {
                         clinicsData.sort((a, b) => b.isFavorite - a.isFavorite);
                         setClinics(clinicsData);
-                        // 5. Update cache using the new key
                         updateCache(cacheKey, clinicsData);
                     }
                 }
@@ -122,14 +116,12 @@ export default function Vet() {
 
         try {
             if (isFavorite) {
-                // Remove from favorites
                 await fetch('http://localhost:4000/api/favorites', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ owner_id, clinic_id })
                 });
             } else {
-                // Add to favorites
                 const response = await fetch('http://localhost:4000/api/favorites', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -143,7 +135,6 @@ export default function Vet() {
                 }
             }
 
-            // Update local state
             const updated = clinics.map(c =>
                 c.clinic_id === clinic_id
                     ? { ...c, isFavorite: !c.isFavorite }
@@ -156,8 +147,6 @@ export default function Vet() {
                 return parseFloat(a.distance_km || 0) - parseFloat(b.distance_km || 0);
             });
             setClinics(updated);
-
-            // Update cache when favorite changes
             updateCache(`vetClinics_${owner_id}`, updated);
         } catch (error) {
             console.error("Error toggling favorite:", error);
@@ -170,21 +159,22 @@ export default function Vet() {
 
     return (
         <Flex direction="column" minH="100vh" p="20px">
-            <Text pt="20px" pb="20px" fontSize="xl" fontFamily="heading" fontWeight="medium" color="Primary.900">
+            {/* FIXED: Increased Header size to 2xl and made it bold */}
+            <Text pt="20px" pb="20px" fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
                 Vet
             </Text>
+            
             <Flex direction="column" gap={5}>
-                <Flex direction="row" gap={3} align="center">
-                    <InputGroup>
-                        <Input placeholder="Search vet..." value={search} onChange={(e) => setSearch(e.target.value)} border="1px" borderColor="Primary.900" borderRadius="20px" />
-                        <InputRightElement pointerEvents="none">
-                            <Box color="Primary.900">
-                                <MdSearch />
-                            </Box>
-                        </InputRightElement>
-                    </InputGroup>
-                </Flex>
-                <Flex direction="column" gap={5}>
+                <InputGroup w="100%" mb="10px">
+                    <Input placeholder="Search vet..." value={search} onChange={(e) => setSearch(e.target.value)} border="1px" borderColor="Primary.900" borderRadius="20px" />
+                    <InputRightElement pointerEvents="none">
+                        <Box color="Primary.900">
+                            <MdSearch />
+                        </Box>
+                    </InputRightElement>
+                </InputGroup>
+
+                <Flex direction="column" gap={4}>
                     {isLoading ? (
                         <Flex align="center" justify="center">
                             <Text>Loading...</Text>
@@ -197,67 +187,70 @@ export default function Vet() {
 
                             return (
                                 <Fragment key={clinic.clinic_id}>
-
-                                    {/* Renders at the very top if you have favorites */}
                                     {showFavoriteHeader && (
                                         <Text fontFamily="heading" fontSize="md" fontWeight="bold" color="Primary.900" mt={2} mb={1}>
                                             Favorite Clinics
                                         </Text>
                                     )}
 
-                                    {/* Renders in the middle, splitting the two lists */}
                                     {showDividerAndOtherHeader && (
                                         <>
-                                            <Divider borderColor="Primary.900" opacity={0.3} my={4} />
+                                            <Divider borderColor="Primary.900" opacity={0.3} my={3} />
                                             <Text fontFamily="heading" fontSize="md" fontWeight="bold" color="Primary.900" mb={1}>
                                                 Other Clinics
                                             </Text>
                                         </>
                                     )}
 
-                                    {/* Renders at the very top if you have zero favorites */}
                                     {showAllClinicsHeader && (
                                         <Text fontFamily="heading" fontSize="md" fontWeight="bold" color="Primary.900" mt={2} mb={1}>
                                             All Clinics
                                         </Text>
                                     )}
 
-                                    {/* Your existing clinic card */}
-                                    <Flex align="center" gap={5} justify="space-between" my={2}>
-                                        <Flex align="center" gap={5}>
+                                    <Flex align="center" justify="space-between" my={2} w="100%">
+                                        <Flex align="center" gap={4} flex="1" overflow="hidden">
                                             <Image
                                                 src={clinic.clinic_photo_cloudinary_url || DogHouse}
-                                                boxSize="71px"
+                                                boxSize="70px"
+                                                minW="70px"
                                                 borderRadius="full"
                                                 objectFit="cover"
                                                 fallbackSrc={DogHouse}
                                                 loading="lazy"
                                                 onError={(e) => {
-                                                    console.error(`Failed to load image for ${clinic.clinic_name}:`, clinic.clinic_photo_cloudinary_url);
+                                                    console.error(`Failed to load image for ${clinic.clinic_name}`);
                                                     e.target.src = DogHouse;
                                                 }}
                                             />
-                                            <Flex direction="column" gap={1}>
-                                                <Text fontFamily="heading" fontSize="lg" fontWeight="medium" color="Primary.900">
+                                            <Flex direction="column" gap={0} flex="1" overflow="hidden">
+                                                {/* FIXED: Reduced to lg, kept bold to establish clear hierarchy */}
+                                                <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>
                                                     {clinic.clinic_name}
                                                 </Text>
                                                 {clinic.distance_km && (
-                                                    <Flex align="center" gap={1}>
-                                                        <MdLocationOn size={14} color="Primary.900" />
-                                                        <Text fontSize="sm" color="Primary.900">
+                                                    <Flex align="center" gap={1} mt={1}>
+                                                        <MdLocationOn size={16} color="var(--chakra-colors-Primary-900)" />
+                                                        {/* FIXED: Reduced to sm */}
+                                                        <Text fontSize="sm" color="Primary.900" isTruncated>
                                                             {clinic.distance_km} km away
                                                         </Text>
                                                     </Flex>
                                                 )}
                                             </Flex>
                                         </Flex>
-                                        <Icon
-                                            as={clinic.isFavorite ? MdStar : MdStarBorder}
-                                            boxSize={7}
-                                            color={clinic.isFavorite ? "yellow.400" : "Primary.900"}
-                                            cursor="pointer"
-                                            onClick={() => toggleFavorite(clinic.clinic_id)}
-                                        />
+
+                                        <Box pl={4}>
+                                            <Icon
+                                                as={clinic.isFavorite ? MdStar : MdStarBorder}
+                                                boxSize={8}
+                                                color={clinic.isFavorite ? "yellow.400" : "Primary.900"}
+                                                cursor="pointer"
+                                                onClick={() => toggleFavorite(clinic.clinic_id)}
+                                                transition="transform 0.1s"
+                                                _active={{ transform: "scale(0.8)" }}
+                                            />
+                                        </Box>
                                     </Flex>
                                 </Fragment>
                             );
@@ -268,5 +261,3 @@ export default function Vet() {
         </Flex>
     );
 }
-
-

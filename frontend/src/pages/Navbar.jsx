@@ -13,6 +13,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  if (location.pathname.includes("/medication-form")) {
+    return null;
+  }
+
   return (
     <Flex position="fixed" bottom="20px" left="0" right="0" justify="center" zIndex="1000" pointerEvents="none" opacity={0.7}>
       <Box pointerEvents="auto" w="335px" h="70px" borderRadius="35px" bg="Neutral.100" border="1px" borderColor="Primary.900" backdropFilter="blur(10px)" boxShadow="lg" px={4}>

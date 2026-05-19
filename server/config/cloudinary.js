@@ -43,20 +43,21 @@ export const deleteFromCloudinary = async (cloudinaryUrl) => {
   try {
     if (!cloudinaryUrl) return
 
-    // Extract public_id from URL
-    // Format: https://res.cloudinary.com/{cloud_name}/image/upload/{folder}/{public_id}.{ext}
-    const urlParts = cloudinaryUrl.split('/')
-    const filename = urlParts[urlParts.length - 1]
-    const publicId = filename.split('.')[0]
+    // Split the URL right at your root folder name
+    const parts = cloudinaryUrl.split('catatanhewanku/')
 
-    // Try to delete with folder path first
-    const folder = urlParts[urlParts.length - 2]
-    const fullPublicId = `${folder}/${publicId}`
+    if (parts.length > 1) {
+      // Get the rest of the path (e.g., "pets/abc123xyz.jpg") and remove the extension
+      const specificPath = parts[1].split('.')[0]
 
-    await cloudinary.uploader.destroy(fullPublicId, { resource_type: 'image' })
+      // Rebuild the exact public_id Cloudinary needs
+      const fullPublicId = `catatanhewanku/${specificPath}`
+
+      await cloudinary.uploader.destroy(fullPublicId, { resource_type: 'image' })
+    }
   } catch (err) {
+    // The helper absorbs the error so your main app doesn't crash
     console.warn(`Cloudinary delete warning (non-critical): ${err.message}`)
-    // Don't throw - deletion failures shouldn't block operations
   }
 }
 

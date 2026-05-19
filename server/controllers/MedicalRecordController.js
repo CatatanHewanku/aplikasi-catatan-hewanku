@@ -174,7 +174,7 @@ export class MedicalRecordController {
         try {
           // Delete old image if exists
           if (existingRecord.record_image) {
-            await deleteFromCloudinary(existingRecord.record_image)
+            await deleteFromCloudinary(existingRecord.record_image);
           }
           // Upload new image
           const result = await uploadToCloudinary(file, 'catatanhewanku/medical-records')
@@ -220,11 +220,7 @@ export class MedicalRecordController {
 
       // Delete image if exists
       if (existingRecord.record_image) {
-        try {
-          await deleteFromCloudinary(existingRecord.record_image)
-        } catch (err) {
-          console.error("Image deletion failed:", err.message)
-        }
+        await deleteFromCloudinary(existingRecord.record_image);
       }
 
       const result = await MedicalRecordModel.deleteRecord(record_id)
