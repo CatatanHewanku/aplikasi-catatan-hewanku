@@ -3,6 +3,7 @@ import { MdArrowBack, MdNotes, MdMedicalServices, MdPets, MdEdit, MdCameraAlt, M
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CacheContext } from "../context/CacheContext";
+import DefaultPet from "../images/defaultPet.jpeg"; // <-- Imported DefaultPet!
 
 const calculateAgeCategory = (dobString) => {
   if (!dobString) {
@@ -148,7 +149,8 @@ export default function MedicationDetail() {
       const result = await response.json();
 
       if (response.ok) {
-        const finalImageUrl = result.data?.pet_image || imagePreview;
+        // ADDED DefaultPet fallback here to match MyPet.jsx logic perfectly!
+        const finalImageUrl = result.data?.pet_image || imagePreview || DefaultPet;
 
         const updatedPet = {
           ...pet,
@@ -226,7 +228,8 @@ export default function MedicationDetail() {
 
       <Flex direction="column" gap={4}>
         <Flex justify="center" pb="15px">
-          <Image src={pet.pet_image} boxSize="130px" borderRadius="full" objectFit="cover" fallback={<Box boxSize="130px" bg="gray.200" borderRadius="full" />} />
+          {/* CHANGED: Uses pet_image, but falls back to DefaultPet seamlessly! */}
+          <Image src={pet.pet_image || DefaultPet} boxSize="130px" borderRadius="full" objectFit="cover" />
         </Flex>
 
         <Box position="relative" bg="Primary.200" pt="28px" pb="16px" px="16px" borderRadius="16px" boxShadow="md">

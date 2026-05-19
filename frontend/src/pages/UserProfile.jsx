@@ -124,6 +124,38 @@ export default function UserProfile() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (!window.confirm("Are you absolutely sure you want to delete your account? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            const ownerData = JSON.parse(localStorage.getItem("owner"));
+            if (!ownerData?.owner_id) return;
+
+            const response = await fetch(`http://localhost:4000/api/owners/${ownerData.owner_id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                alert("Account deleted successfully.");
+                // Clear local storage completely
+                localStorage.removeItem("isLogin");
+                localStorage.removeItem("token");
+                localStorage.removeItem("owner");
+                
+                // Send user back to the login/signup page
+                window.location.href = "/"; 
+            } else {
+                const result = await response.json();
+                alert(result.message || "Failed to delete account.");
+            }
+        } catch (error) {
+            console.error("Delete account error:", error);
+            alert("An error occurred while deleting your account.");
+        }
+    };
+
     const handleLogout = async () => {
         try {
             await authService.logout();
@@ -273,11 +305,13 @@ export default function UserProfile() {
                 </Flex>
 
                 {/* ACTION BUTTONS */}
-                {/* FIXED: Reduced mt from "40px" to "20px" to tighten the layout */}
                 {isEdit ? (
-                    <Flex justify="center" mt="20px">
+                    <Flex direction="column" gap={3} mt="20px">
                         <Button w="100%" h="50px" bg="Primary.800" color="white" borderRadius="30px" fontSize="lg" fontWeight="bold" _hover={{ opacity: 0.9 }} onClick={handleSave} isDisabled={isLoading} boxShadow="md">
                             {isLoading ? "Saving..." : "Save Changes"}
+                        </Button>
+                        <Button w="100%" h="50px" bg="white" color="red.500" border="1px solid" borderColor="red.500" borderRadius="30px" fontSize="lg" fontWeight="bold" _hover={{ bg: "red.50" }} onClick={handleDeleteAccount}>
+                            Delete Account
                         </Button>
                     </Flex>
                 ) : (

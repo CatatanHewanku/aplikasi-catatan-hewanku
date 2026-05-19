@@ -5,6 +5,9 @@ const router = express.Router()
 
 router.post("/", ReminderController.createReminder)
 router.get("/", ReminderController.getRemindersByDate)
+router.get("/month", ReminderController.getRemindersByMonthYear)
+router.get("/upcoming", ReminderController.getUpcomingReminders)
+router.patch("/:reminder_id", ReminderController.updateReminder)
 router.delete("/:reminder_id", ReminderController.deleteReminder)
 
 export default router

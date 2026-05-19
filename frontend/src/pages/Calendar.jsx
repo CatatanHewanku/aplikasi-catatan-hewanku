@@ -77,7 +77,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const [selectedTag, setSelectedTag] = useState("");
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingReminderId, setEditingReminderId] = useState(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState("");
@@ -142,11 +142,49 @@ export default function Calendar() {
     }
   };
 
+  // Fetch all reminders for the current month
+  const fetchAllRemindersForMonth = async () => {
+    try {
+      const ownerData = JSON.parse(localStorage.getItem("owner"));
+      if (!ownerData?.owner_id) return;
+
+      const response = await fetch(
+        `http://localhost:4000/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
+      );
+      const result = await response.json();
+
+      if (response.ok && result.data) {
+        const remindersByDate = {};
+
+        result.data.forEach((reminder) => {
+          const dateStr = reminder.reminder_date;
+          if (!remindersByDate[dateStr]) {
+            remindersByDate[dateStr] = [];
+          }
+          remindersByDate[dateStr].push(reminder);
+        });
+
+        setReminders((prev) => ({
+          ...prev,
+          ...remindersByDate
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching month reminders:", error);
+    }
+  };
+
+
   useEffect(() => {
     if (selectedDate) {
       fetchReminders(selectedDate);
     }
   }, [selectedDate]);
+
+  // Fetch all reminders for the month when component mounts or month changes
+  useEffect(() => {
+    fetchAllRemindersForMonth();
+  }, [month, year]);
 
   const saveEvent = async () => {
     if (!inputText || !inputTime || !selectedDate) return;
@@ -160,28 +198,53 @@ export default function Calendar() {
         return;
       }
 
-      const response = await fetch("http://localhost:4000/api/reminder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner_id: ownerData.owner_id,
-          reminder_date: selectedDate,
-          reminder_title: inputText,
-          reminder_time: inputTime,
-          reminder_category: selectedTag || null
-        })
-      });
+      if (editingReminderId) {
+        // Update existing reminder
+        const response = await fetch(`http://localhost:4000/api/reminder/${editingReminderId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reminder_title: inputText,
+            reminder_time: inputTime,
+            reminder_category: selectedTag || null
+          })
+        });
 
-      if (response.ok) {
-        await fetchReminders(selectedDate);
-        setInputText("");
-        setInputTime("");
-        setSelectedTag("");
-        setEditingIndex(null);
-        setIsOpen(false);
+        if (response.ok) {
+          await fetchReminders(selectedDate);
+          setInputText("");
+          setInputTime("");
+          setSelectedTag("");
+          setEditingReminderId(null);
+          setIsOpen(false);
+        } else {
+          const error = await response.json();
+          alert(error.message || "Failed to update reminder");
+        }
       } else {
-        const error = await response.json();
-        alert(error.message || "Failed to save reminder");
+        // Create new reminder
+        const response = await fetch("http://localhost:4000/api/reminder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner_id: ownerData.owner_id,
+            reminder_date: selectedDate,
+            reminder_title: inputText,
+            reminder_time: inputTime,
+            reminder_category: selectedTag || null
+          })
+        });
+
+        if (response.ok) {
+          await fetchReminders(selectedDate);
+          setInputText("");
+          setInputTime("");
+          setSelectedTag("");
+          setIsOpen(false);
+        } else {
+          const error = await response.json();
+          alert(error.message || "Failed to save reminder");
+        }
       }
     } catch (error) {
       console.error("Error saving reminder:", error);
@@ -329,7 +392,7 @@ export default function Calendar() {
                 {selectedEvents.map((item, idx) => (
                   <Flex key={idx} justify="space-between" align="center" bg="Primary.100" p={3} borderRadius="lg" cursor="pointer" transition="transform 0.1s" _active={{ transform: "scale(0.98)" }}
                     onClick={() => {
-                      setEditingIndex(idx);
+                      setEditingReminderId(item.reminder_id);
                       setInputText(item.reminder_title);
                       setInputTime(item.reminder_time.slice(0, 5));
                       setSelectedTag(item.reminder_category || "");
@@ -375,7 +438,7 @@ export default function Calendar() {
                 setInputText("");
                 setInputTime("");
                 setSelectedTag("");
-                setEditingIndex(null);
+                setEditingReminderId(null);
                 setIsOpen(true);
               }}
             >
@@ -389,11 +452,14 @@ export default function Calendar() {
       </Box>
 
       {/* --- ADD EVENT MODAL --- */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} isCentered>
+      <Modal isOpen={isOpen} onClose={() => {
+        setIsOpen(false);
+        setEditingReminderId(null);
+      }} isCentered>
         <ModalOverlay />
         <ModalContent borderRadius="xl" mx={4}>
           <ModalHeader fontFamily="heading" color="Primary.900">
-            {editingIndex !== null ? "Edit Event" : "Add Event"}
+            {editingReminderId !== null ? "Edit Event" : "Add Event"}
           </ModalHeader>
           <ModalBody>
             <Flex direction="column" gap={4}>
@@ -442,7 +508,10 @@ export default function Calendar() {
           </ModalBody>
 
           <ModalFooter borderTop="1px solid" borderColor="gray.100" mt={2}>
-            <Button mr={3} onClick={() => setIsOpen(false)} variant="ghost" color="Primary.800">
+            <Button mr={3} onClick={() => {
+              setIsOpen(false);
+              setEditingReminderId(null);
+            }} variant="ghost" color="Primary.800">
               Cancel
             </Button>
             <Button bg="Primary.800" color="white" onClick={saveEvent} isDisabled={isLoading} _hover={{ bg: "Primary.700" }}>
