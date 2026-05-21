@@ -83,13 +83,10 @@ export class PetController {
 
       if (file) {
         try {
-          // Delete old image if exists
           if (existingPet.pet_image) {
             await deleteFromCloudinary(existingPet.pet_image);
           }
-          // Upload new image
           const result = await uploadToCloudinary(file, 'catatanhewanku/pets')
-          // Save the new link to our one true variable!
           pet_image_url = result.secure_url
         } catch (err) {
           return res.status(500).json({ message: `Image upload failed: ${err.message}` })
@@ -113,9 +110,22 @@ export class PetController {
       const existingPet = await PetModel.getPetById(pet_id)
       if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
-      // Delete image if exists
+      // Delete pet image
       if (existingPet.pet_image) {
         await deleteFromCloudinary(existingPet.pet_image);
+      }
+
+      // Import MedicalRecordModel to fetch related records
+      const { MedicalRecordModel } = await import("../models/MedicalRecordModel.js");
+
+      // Fetch all medical records for this pet
+      const medicalRecords = await MedicalRecordModel.getRecordsByPetId(pet_id);
+      
+      // Delete images from all medical records
+      for (const record of medicalRecords) {
+        if (record.record_image) {
+          await deleteFromCloudinary(record.record_image);
+        }
       }
 
       const result = await PetModel.deletePet(pet_id)

@@ -1,14 +1,19 @@
 import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image } from "@chakra-ui/react";
 import { MdArrowBack, MdEmail } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
+import { removeEmojis } from "../utils/textUtils";
 import Logo from "../images/Logo.jpeg";
 
 export default function ForgotPasswordEmail() {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const handleSendOtp = async () => {
         if (!email.trim()) {
@@ -57,18 +62,18 @@ export default function ForgotPasswordEmail() {
                     <InputLeftElement pointerEvents="none" color="Primary.800">
                         <MdEmail size="20px" />
                     </InputLeftElement>
-                    <Input 
-                        placeholder="Email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        fontFamily="body" 
-                        fontSize="lg" 
-                        bg="Neutral.100" 
-                        borderRadius="30px" 
-                        border="1px" 
-                        borderColor={error ? "red.300" : "Primary.800"} 
-                        boxShadow="md" 
-                        _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }} 
+                    <Input
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(removeEmojis(e.target.value))}
+                        fontFamily="body"
+                        fontSize="lg"
+                        bg="Neutral.100"
+                        borderRadius="30px"
+                        border="1px"
+                        borderColor={error ? "red.300" : "Primary.800"}
+                        boxShadow="md"
+                        _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }}
                     />
                 </InputGroup>
 
@@ -79,14 +84,14 @@ export default function ForgotPasswordEmail() {
                 )}
 
                 <Flex justify="center" mt="30px">
-                    <Button 
-                        w="80%" 
-                        h="40px" 
-                        bg="Primary.800" 
-                        color="white" 
-                        borderRadius="30px" 
-                        fontSize="xl" 
-                        _hover={{ opacity: 0.9 }} 
+                    <Button
+                        w="80%"
+                        h="40px"
+                        bg="Primary.800"
+                        color="white"
+                        borderRadius="30px"
+                        fontSize="xl"
+                        _hover={{ opacity: 0.9 }}
                         onClick={handleSendOtp}
                     >
                         Send OTP

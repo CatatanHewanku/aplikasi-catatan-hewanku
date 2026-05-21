@@ -1,10 +1,13 @@
-import { 
-  Flex, Box, Text, Input, Button, Modal, ModalOverlay, ModalContent, 
-  ModalHeader, ModalBody, ModalFooter, Select, Popover, PopoverTrigger, 
-  PopoverContent, PopoverBody, useToast, useDisclosure 
+import {
+  Flex, Box, Text, Input, Button, Modal, ModalOverlay, ModalContent,
+  ModalHeader, ModalBody, ModalFooter, Select, Popover, PopoverTrigger,
+  PopoverContent, PopoverBody, useToast, useDisclosure
 } from "@chakra-ui/react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useContext } from "react";
 import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning, MdKeyboardArrowDown } from "react-icons/md";
+import { CacheContext } from "../utils/CacheContext.jsx";
+import { removeEmojis } from "../utils/textUtils.js";
+
 const URL_Name = import.meta.env.VITE_API_URL
 
 // --- CUSTOM ALARM/CLOCK WHEEL COMPONENT ---
@@ -28,7 +31,7 @@ const ScrollWheel = ({ items, selectedValue, onSelect }) => {
       if (items[index] && items[index] !== selectedValue) {
         onSelect(items[index]);
       }
-    }, 150); 
+    }, 150);
   };
 
   return (
@@ -43,7 +46,7 @@ const ScrollWheel = ({ items, selectedValue, onSelect }) => {
         scrollbarWidth: "none",
       }}
     >
-      <Box h="40px" /> 
+      <Box h="40px" />
       {items.map((item) => (
         <Flex
           key={item}
@@ -61,21 +64,22 @@ const ScrollWheel = ({ items, selectedValue, onSelect }) => {
           {item}
         </Flex>
       ))}
-      <Box h="40px" /> 
+      <Box h="40px" />
     </Box>
   );
 };
 
 export default function Calendar() {
   const toast = useToast();
+  const { getCachedData, updateCache } = useContext(CacheContext); // CACHE INSTALLED
+
   const today = new Date();
-  
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const [month, setMonth] = useState(today.getMonth());
   const [year, setYear] = useState(today.getFullYear());
   const [reminders, setReminders] = useState({});
-  
+
   const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const [selectedTag, setSelectedTag] = useState("");
@@ -88,6 +92,10 @@ export default function Calendar() {
 
   const { isOpen: isDeleteEventOpen, onOpen: onOpenDeleteEvent, onClose: onCloseDeleteEvent } = useDisclosure();
   const [eventToDelete, setEventToDelete] = useState(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const tags = ["", "Vaccination", "General Check Up", "Dental Care", "Parasite Control", "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", "Follow-up", "Emergency"];
 
@@ -103,6 +111,9 @@ export default function Calendar() {
     return Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
   }, []);
 
+  const minYear = yearOptions[0];
+  const maxYear = yearOptions[yearOptions.length - 1];
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
 
@@ -112,17 +123,19 @@ export default function Calendar() {
 
   const showToast = (message, status = "success") => {
     toast({
-        position: "top",
-        duration: 3000,
-        render: () => (
-            <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
-                {message}
-            </Box>
-        ),
+      position: "top",
+      duration: 3000,
+      render: () => (
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+          {message}
+        </Box>
+      ),
     });
   };
 
   const handleNextMonth = () => {
+    if (year === maxYear && month === 11) return;
+
     if (month === 11) {
       setMonth(0);
       setYear(year + 1);
@@ -132,6 +145,8 @@ export default function Calendar() {
   };
 
   const handlePrevMonth = () => {
+    if (year === minYear && month === 0) return;
+
     if (month === 0) {
       setMonth(11);
       setYear(year - 1);
@@ -140,29 +155,48 @@ export default function Calendar() {
     }
   };
 
-  const fetchReminders = async (date) => {
+  const fetchReminders = async (date, force = false) => {
     try {
       const ownerData = JSON.parse(localStorage.getItem("owner"));
       if (!ownerData?.owner_id) return;
+
+      const cacheKey = `calendar_day_${ownerData.owner_id}_${date}`;
+
+      if (!force) {
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) {
+          setReminders((prev) => ({ ...prev, [date]: cachedData }));
+          return;
+        }
+      }
 
       const response = await fetch(`${URL_Name}/api/reminder?owner_id=${ownerData.owner_id}&reminder_date=${date}`);
       const result = await response.json();
 
       if (response.ok) {
-        setReminders((prev) => ({
-          ...prev,
-          [date]: result.data || []
-        }));
+        const data = result.data || [];
+        setReminders((prev) => ({ ...prev, [date]: data }));
+        updateCache(cacheKey, data);
       }
     } catch (error) {
       console.error("Error fetching reminders:", error);
     }
   };
 
-  const fetchAllRemindersForMonth = async () => {
+  const fetchAllRemindersForMonth = async (force = false) => {
     try {
       const ownerData = JSON.parse(localStorage.getItem("owner"));
       if (!ownerData?.owner_id) return;
+
+      const cacheKey = `calendar_month_${ownerData.owner_id}_${year}_${month}`;
+
+      if (!force) {
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) {
+          setReminders((prev) => ({ ...prev, ...cachedData }));
+          return;
+        }
+      }
 
       const response = await fetch(
         `${URL_Name}/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
@@ -171,12 +205,22 @@ export default function Calendar() {
 
       if (response.ok && result.data) {
         const remindersByDate = {};
+        
         result.data.forEach((reminder) => {
-          const dateStr = reminder.reminder_date;
-          if (!remindersByDate[dateStr]) remindersByDate[dateStr] = [];
-          remindersByDate[dateStr].push(reminder);
+          // --- THE BUG FIX IS HERE ---
+          // Cuts off the 'T00:00:00' part sent by the database
+          const rawDate = reminder.reminder_date.split('T')[0]; 
+          
+          // Re-pads it to strictly match the YYYY-MM-DD the Grid expects
+          const [y, m, d] = rawDate.split('-');
+          const cleanDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+          if (!remindersByDate[cleanDate]) remindersByDate[cleanDate] = [];
+          remindersByDate[cleanDate].push(reminder);
         });
+
         setReminders((prev) => ({ ...prev, ...remindersByDate }));
+        updateCache(cacheKey, remindersByDate);
       }
     } catch (error) {
       console.error("Error fetching month reminders:", error);
@@ -217,7 +261,7 @@ export default function Calendar() {
         payload.reminder_date = selectedDate;
       }
 
-      const url = editingReminderId 
+      const url = editingReminderId
         ? `${URL_Name}/api/reminder/${editingReminderId}`
         : `${URL_Name}/api/reminder`;
 
@@ -231,7 +275,11 @@ export default function Calendar() {
 
       if (response.ok) {
         showToast(`Reminder ${editingReminderId ? "updated" : "saved"}!`, "success");
-        await fetchReminders(selectedDate);
+        
+        // Pass "true" to force bypassing the cache so the dot appears instantly!
+        await fetchReminders(selectedDate, true);
+        await fetchAllRemindersForMonth(true);
+        
         setInputText("");
         setInputTime("");
         setSelectedTag("");
@@ -256,7 +304,10 @@ export default function Calendar() {
 
       if (response.ok) {
         showToast("Reminder deleted", "success");
-        await fetchReminders(eventToDelete.date);
+        
+        // Pass "true" to force bypassing the cache so the dot vanishes instantly!
+        await fetchReminders(eventToDelete.date, true);
+        await fetchAllRemindersForMonth(true);
       } else {
         showToast("Failed to delete reminder", "error");
       }
@@ -276,25 +327,23 @@ export default function Calendar() {
   return (
     <Flex direction="column" minH="100vh" py={6} px={4} align="center" pb="120px">
       <Box w="100%" maxW="400px">
-        <Text pb={4} fontSize="2xl" color="Primary.900" fontFamily="heading" fontWeight="bold">
+        <Text pt="20px" pb="20px" fontSize="2xl" color="Primary.900" fontFamily="heading" fontWeight="bold">
           Calendar
         </Text>
 
         <Flex direction="column" align="center" gap={5}>
           <Box w="100%" borderRadius="xl" bg="Primary.200" display="flex" flexDirection="column" p={4} boxShadow="sm">
             <Flex justify="space-between" align="center" px={2} pb={4} color="Primary.900">
-              <Box cursor="pointer" onClick={handlePrevMonth}>
+              <Box cursor={year === minYear && month === 0 ? "not-allowed" : "pointer"} opacity={year === minYear && month === 0 ? 0.3 : 1} onClick={handlePrevMonth}>
                 <MdChevronLeft size={28} />
               </Box>
 
-              {/* SINGLE COMBINED MONTH/YEAR DROPDOWN */}
               <Popover placement="bottom" isLazy>
                 <PopoverTrigger>
                   <Flex align="center" gap={1} cursor="pointer" _hover={{ opacity: 0.8 }}>
                     <Text fontSize="lg" fontWeight="bold">
                       {monthNames[month]} {year}
                     </Text>
-                    <MdKeyboardArrowDown size={22} />
                   </Flex>
                 </PopoverTrigger>
                 <PopoverContent w="240px" maxW="90vw" bg="white" borderColor="Primary.800" overflow="hidden" boxShadow="xl">
@@ -311,7 +360,7 @@ export default function Calendar() {
                 </PopoverContent>
               </Popover>
 
-              <Box cursor="pointer" onClick={handleNextMonth}>
+              <Box cursor={year === maxYear && month === 11 ? "not-allowed" : "pointer"} opacity={year === maxYear && month === 11 ? 0.3 : 1} onClick={handleNextMonth}>
                 <MdChevronRight size={28} />
               </Box>
             </Flex>
@@ -427,7 +476,7 @@ export default function Calendar() {
       </Box>
 
       {/* --- ADD/EDIT EVENT MODAL --- */}
-      <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditingReminderId(null); }} isCentered>
+      <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditingReminderId(null); }} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="xl" mx={4}>
           <ModalHeader fontFamily="heading" color="Primary.900">
@@ -437,7 +486,7 @@ export default function Calendar() {
             <Flex direction="column" gap={4}>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Event Name</Text>
-                <Input bg="white" placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(e.target.value)} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800" />
+                <Input bg="white" placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(removeEmojis(e.target.value))} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800" />
               </Box>
 
               <Box>
@@ -492,25 +541,25 @@ export default function Calendar() {
       <Modal isOpen={isDeleteEventOpen} onClose={onCloseDeleteEvent} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
-            <ModalBody>
-                <Flex justify="center" mb={4}>
-                    <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
-                        <MdWarning size="32px" />
-                    </Flex>
-                </Flex>
-                <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Event?</Text>
-                <Text color="Primary.800" fontSize="sm" mb={4}>
-                    Are you sure you want to cancel this event?
-                </Text>
-            </ModalBody>
-            <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
-                <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDeleteEvent}>
-                    Back
-                </Button>
-                <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={confirmDeleteEvent} _hover={{ bg: "red.600" }}>
-                    Delete
-                </Button>
-            </ModalFooter>
+          <ModalBody>
+            <Flex justify="center" mb={4}>
+              <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
+                <MdWarning size="32px" />
+              </Flex>
+            </Flex>
+            <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Event?</Text>
+            <Text color="Primary.800" fontSize="sm" mb={4}>
+              Are you sure you want to cancel this event?
+            </Text>
+          </ModalBody>
+          <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
+            <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDeleteEvent}>
+              Back
+            </Button>
+            <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={confirmDeleteEvent} _hover={{ bg: "red.600" }}>
+              Delete
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </Flex>

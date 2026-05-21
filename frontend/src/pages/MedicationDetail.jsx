@@ -2,7 +2,8 @@ import { Flex, Box, Text, Image, Button, Icon, Modal, ModalOverlay, ModalContent
 import { MdArrowBack, MdNotes, MdMedicalServices, MdPets, MdEdit, MdCameraAlt, MdKeyboardArrowDown } from "react-icons/md";
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CacheContext } from "../context/CacheContext";
+import { CacheContext } from "../utils/CacheContext";
+import { removeEmojis } from "../utils/textUtils";
 import DefaultPet from "../images/defaultPet.jpeg";
 const URL_Name = import.meta.env.VITE_API_URL
 
@@ -43,15 +44,19 @@ export default function MedicationDetail() {
 
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const showToast = (message, status = "success") => {
     toast({
-        position: "top",
-        duration: 3000,
-        render: () => (
-            <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
-                {message}
-            </Box>
-        ),
+      position: "top",
+      duration: 3000,
+      render: () => (
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+          {message}
+        </Box>
+      ),
     });
   };
 
@@ -82,9 +87,16 @@ export default function MedicationDetail() {
       }
     };
 
+    const loadAllData = async () => {
+      setIsLoading(true);
+      await Promise.all([fetchPetData(), fetchMedicalRecords()]);
+      setIsLoading(false);
+    };
+
     fetchPetData();
     fetchMedicalRecords();
     setIsLoading(false);
+    loadAllData();
   }, [id]);
 
   if (isLoading) return <Flex justify="center" align="center" minH="100vh"><Text>Loading...</Text></Flex>;
@@ -106,7 +118,7 @@ export default function MedicationDetail() {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
       showToast("Invalid file format! Please upload only JPG or PNG images.", "error");
-      e.target.value = null; 
+      e.target.value = null;
       return;
     }
     setPet_image(file);
@@ -173,12 +185,11 @@ export default function MedicationDetail() {
 
   return (
     <Flex direction="column" p="20px" gap={5} minH="100vh" pb="120px">
-      <Flex justify="space-between" align="center" pt="20px" pb="10px">
-        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)}>
+      <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
+        <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate('/mypet')}>
           <MdArrowBack size="28px" />
         </Box>
-        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">Pet Details</Text>
-        <Box w="28px" />
+        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900" textAlign="center">Pet Details</Text>
       </Flex>
 
       <Flex direction="column" gap={4}>
@@ -261,7 +272,7 @@ export default function MedicationDetail() {
       </Box>
 
       {/* NOTES MODAL */}
-      <Modal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} isCentered>
+      <Modal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent bg="Primary.200" borderRadius="16px" mx="20px" boxShadow="xl">
           <ModalBody p="16px">
@@ -278,7 +289,7 @@ export default function MedicationDetail() {
       </Modal>
 
       {/* EDIT PET MODAL */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} isCentered>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="16px" p="10px" mx="20px">
           <ModalHeader textAlign="center" color="Primary.900" fontFamily="heading" fontSize="xl" fontWeight="bold">Edit Pet Profile</ModalHeader>
@@ -295,8 +306,8 @@ export default function MedicationDetail() {
                   <Input type="file" accept="image/*" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleImageUpload} />
                 </Box>
               </Flex>
-              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text><Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
-              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text><Input type="date" value={pet_dob} onChange={(e) => setPet_dob(e.target.value)} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
+              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text><Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
+              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text><Input type="date" value={pet_dob} onChange={(e) => setPet_dob(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Type</Text>
                 <Menu matchWidth>

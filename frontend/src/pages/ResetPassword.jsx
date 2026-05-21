@@ -1,9 +1,10 @@
-import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, Image, InputRightElement } from "@chakra-ui/react";
+import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image, useToast } from "@chakra-ui/react";
 import { MdArrowBack, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import Logo from "../images/Logo.jpeg";
+import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
+import { removeEmojis } from "../utils/textUtils";
+import Logo from "../images/Logo.jpeg";
 const URL_Name = import.meta.env.VITE_API_URL
 
 const validatePassword = (password) => {
@@ -24,6 +25,7 @@ const validatePassword = (password) => {
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,6 +38,22 @@ export default function ResetPassword() {
   const loggedInOwner = JSON.parse(localStorage.getItem("owner"));
   const savedCode = localStorage.getItem("resetCode");
   const isChangeMode = !!loggedInOwner && !savedCode;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const showToast = (message, status = "success") => {
+    toast({
+      position: "top",
+      duration: 3500,
+      render: () => (
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+          {message}
+        </Box>
+      ),
+    });
+  };
 
   const handleResetPassword = async () => {
     if (!password) {
@@ -72,8 +90,8 @@ export default function ResetPassword() {
         const result = await response.json();
 
         if (response.ok) {
-          alert("Password changed successfully!");
-          navigate(-1); // Send them right back to their profile
+          showToast("Password changed successfully!", "success"); // TOAST INSTALLED
+          navigate(-1);
         } else {
           throw new Error(result.message || "Failed to change password.");
         }
@@ -91,11 +109,10 @@ export default function ResetPassword() {
         localStorage.removeItem("resetEmail");
         localStorage.removeItem("resetCode");
 
-        alert("Password reset successfully!");
+        showToast("Password reset successfully!", "success");
         navigate("/");
       }
     } catch (error) {
-      console.error("Password update error:", error);
       setError(error?.message || "Failed to update password. Please try again.");
     } finally {
       setIsLoading(false);
@@ -132,8 +149,19 @@ export default function ResetPassword() {
               New Password
             </Text>
             <InputGroup>
-              <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
-              <Input type={showPassword ? "text" : "password"} placeholder="Enter new password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px solid" borderColor="Primary.300" focusBorderColor="Primary.800" color="Primary.900" fontWeight="medium" boxShadow="sm" />
+              <InputLeftElement pointerEvents="none" color="Primary.800">
+                <MdLock size="20px" />
+              </InputLeftElement>
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter new password"
+                value={password}
+                onChange={(e) => setPassword(removeEmojis(e.target.value))}
+                bg="white"
+                borderRadius="30px"
+                border="1px solid"
+                borderColor="Primary.300"
+              />
               <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
               </InputRightElement>
@@ -146,7 +174,7 @@ export default function ResetPassword() {
             </Text>
             <InputGroup>
               <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
-              <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px solid" borderColor={error ? "red.400" : "Primary.300"} focusBorderColor="Primary.800" color="Primary.900" fontWeight="medium" boxShadow="sm" />
+              <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px solid" borderColor={error ? "red.400" : "Primary.300"} focusBorderColor="Primary.800" color="Primary.900" fontWeight="medium" boxShadow="sm" />
               <InputRightElement cursor="pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
               </InputRightElement>

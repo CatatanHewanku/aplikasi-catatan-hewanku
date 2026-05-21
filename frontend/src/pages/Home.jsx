@@ -16,6 +16,10 @@ export default function Home() {
   const [lastReminderId, setLastReminderId] = useState(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const ownerData = JSON.parse(localStorage.getItem("owner"));
     
     if (ownerData) {
@@ -210,12 +214,13 @@ export default function Home() {
   return (
     <Flex direction="column" minH="100vh" p="20px">
       {/* Standardized Header Spacing */}
-      <Flex justify="space-between" align="center" pt="20px" pb="20px">
-        <Text fontSize="xl" fontFamily="heading" fontWeight="medium" color="Primary.900">
+      <Flex justify="space-between" align="center" pt="20px" pb="20px" gap={4}>
+        <Text fontSize="xl" fontFamily="heading" fontWeight="medium" color="Primary.900" flex="1" noOfLines={2}>
           Welcome, {owner_name}
         </Text>
 
-        <Flex 
+        <Flex
+          minW="50px"
           boxSize="50px" 
           borderRadius="full" 
           bg="Primary.200" 
@@ -223,7 +228,8 @@ export default function Home() {
           align="center" 
           boxShadow="md" 
           cursor="pointer" 
-          overflow="hidden" 
+          overflow="hidden"
+          flexShrink={0}
           onClick={() => navigate("/user-profile")}
         >
           {owner_image_url ? (

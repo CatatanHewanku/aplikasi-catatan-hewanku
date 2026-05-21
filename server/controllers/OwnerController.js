@@ -212,8 +212,34 @@ export class OwnerController {
         return res.status(404).json({ message: "Owner not found" });
       }
 
+      // Delete owner's profile image
       if (currentOwner.owner_image_url) {
         await deleteFromCloudinary(currentOwner.owner_image_url);
+      }
+
+      // Import PetModel to fetch all pets
+      const { PetModel } = await import("../models/PetModel.js");
+      const { MedicalRecordModel } = await import("../models/MedicalRecordModel.js");
+
+      // Fetch all pets belonging to this owner
+      const ownerPets = await PetModel.getPetsByOwner(owner_id);
+      
+      // Delete all images from pets and their medical records
+      for (const pet of ownerPets) {
+        // Delete pet image
+        if (pet.pet_image) {
+          await deleteFromCloudinary(pet.pet_image);
+        }
+        
+        // Fetch all medical records for this pet
+        const medicalRecords = await MedicalRecordModel.getRecordsByPetId(pet.pet_id);
+        
+        // Delete images from all medical records
+        for (const record of medicalRecords) {
+          if (record.record_image) {
+            await deleteFromCloudinary(record.record_image);
+          }
+        }
       }
 
       const result = await OwnerModel.deleteOwner(owner_id)

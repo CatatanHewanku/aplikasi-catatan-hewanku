@@ -1,9 +1,10 @@
 import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image } from "@chakra-ui/react";
 import { MdEmail, MdLock, MdPerson, MdPhone, MdVisibility, MdVisibilityOff } from "react-icons/md";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../images/Logo.jpeg";
 import { authService } from "../services/authService";
+import { removeEmojis } from "../utils/textUtils";
+import Logo from "../images/Logo.jpeg";
 
 const validatePassword = (password) => {
   const errors = [];
@@ -36,6 +37,10 @@ export default function SignUp() {
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleFirstName = (e) => {
     const value = e.target.value;
     const regex = /^[A-Za-z\s]*$/;
@@ -63,7 +68,7 @@ export default function SignUp() {
       setPasswordError("Invalid email format");
       return;
     }
-    if (!phone.trim() || phone.length < 10) {
+    if (!phone.trim() || phone.length < 11 || phone.length > 12) {
       setPasswordError("Valid phone number is required");
       return;
     }
@@ -131,18 +136,18 @@ export default function SignUp() {
             <InputLeftElement pointerEvents="none" color="Primary.800">
               <MdEmail size="20px" />
             </InputLeftElement>
-            <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <Input placeholder="Email" value={email} onChange={(e) => setEmail(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
           </InputGroup>
 
           <InputGroup>
             <InputLeftElement pointerEvents="none" color="Primary.800" >
               <MdPhone size="20px" />
             </InputLeftElement>
-            <Input placeholder="Phone Number" value={phone} onChange={(e) => { const value = e.target.value.replace(/\D/g, ""); setPhone(value); }} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <Input placeholder="Phone Number" value={phone} onChange={(e) => { const value = e.target.value.replace(/\D/g, ""); setPhone(removeEmojis(value)); }} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
           </InputGroup>
           <InputGroup>
             <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
-            <Input type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <Input type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
             <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
             </InputRightElement>
@@ -150,7 +155,7 @@ export default function SignUp() {
 
           <InputGroup>
             <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
-            <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} bg="white" borderRadius="30px" border="1px" borderColor={passwordError ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: passwordError ? "red.300" : "Primary.800", boxShadow: "md" }} />
+            <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px" borderColor={passwordError ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: passwordError ? "red.300" : "Primary.800", boxShadow: "md" }} />
             <InputRightElement cursor="pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
               {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
             </InputRightElement>

@@ -2,6 +2,7 @@ import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, M
 import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdWarning } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { removeEmojis, sanitizeWeight } from "../utils/textUtils";
 const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
@@ -43,6 +44,10 @@ export default function MedicationForm() {
         ),
     });
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     if (!logId) return;
@@ -168,21 +173,20 @@ export default function MedicationForm() {
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px">
       
       {/* STANDARD HEADER */}
-      <Flex justify="space-between" align="center" pt="20px" pb="10px">
-        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
+      <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
+        <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate(`/mypet/${id}`)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
           <MdArrowBack size="28px" />
         </Box>
-        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
+        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900" textAlign="center">
           Medication Form
         </Text>
-        <Box w="28px" /> 
       </Flex>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Examination Date
         </Text>
-        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(e.target.value)} />
+        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(removeEmojis(e.target.value))} />
       </Box>
 
       {/* CHAKRA MENU DROPDOWN FIX */}
@@ -237,28 +241,28 @@ export default function MedicationForm() {
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinarian
         </Text>
-        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(e.target.value)} />
+        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(removeEmojis(e.target.value))} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800" fontWeight="medium">
           Veterinary Clinic
         </Text>
-        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(e.target.value)} />
+        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(removeEmojis(e.target.value))} />
       </Box>
 
       <Flex gap={4}>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
           <Text mb="6px" color="Primary.800" fontWeight="medium">
-            Weight
+            Weight (kg)
           </Text>
-          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(e.target.value)} />
+          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(sanitizeWeight(e.target.value))} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
           <Text mb="6px" color="Primary.800" fontWeight="medium">
-            Temperature
+            Temperature (°C)
           </Text>
-          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(e.target.value)} />
+          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(sanitizeWeight(e.target.value))} />
         </Box>
       </Flex>
 
@@ -274,7 +278,7 @@ export default function MedicationForm() {
           h="180px"
           maxLength={1000}
           value={record_note}
-          onChange={(e) => setRecord_note(e.target.value)}
+          onChange={(e) => setRecord_note(removeEmojis(e.target.value))}
         />
         <Flex justify="flex-end">
           <Text fontSize="sm" color="Primary.800" mt="4px">
@@ -331,20 +335,6 @@ export default function MedicationForm() {
               cursor="pointer" 
               onClick={() => setIsImageZoomOpen(true)} 
               _hover={{ opacity: 0.9 }}
-            />
-            <IconButton 
-              icon={<MdClose size="14px" />} 
-              size="xs" 
-              isRound 
-              bg="red.500" 
-              color="white" 
-              position="absolute" 
-              top="-8px" 
-              right="-8px" 
-              boxShadow="md" 
-              _hover={{ bg: "red.600", transform: "scale(1.1)" }} 
-              onClick={() => { setRecord_image(null); setPhotoPreview(""); }} 
-              aria-label="Remove photo" 
             />
           </Box>
         )}

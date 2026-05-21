@@ -1,4 +1,4 @@
-import { Flex, Box, Text, Button, Image, Icon, Divider, Stack } from "@chakra-ui/react";
+import { Flex, Box, Text, Button, Image, Icon, Divider, Stack, useToast } from "@chakra-ui/react";
 import { MdArrowBack, MdLocationOn, MdPhone, MdMap } from "react-icons/md";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -26,6 +26,10 @@ export default function VetClinicDetail() {
       ),
     });
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const fetchClinicDetails = async () => {
@@ -80,14 +84,11 @@ export default function VetClinicDetail() {
     <Flex direction="column" minH="100vh" p="20px" pb="120px">
 
       {/* HEADER: Standardized centering */}
-      <Flex justify="space-between" align="center" pt="20px" pb="20px">
-        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
+      <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
+        <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate('/vet')}>
           <MdArrowBack size="28px" />
         </Box>
-        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
-          Clinic Details
-        </Text>
-        <Box w="28px" />
+        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900" textAlign="center">Clinic Details</Text>
       </Flex>
 
       {/* CLINIC IMAGE */}
@@ -104,7 +105,7 @@ export default function VetClinicDetail() {
 
       <Stack spacing={6}>
         {/* CLINIC NAME */}
-        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
+        <Text fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
           {clinic.clinic_name}
         </Text>
 

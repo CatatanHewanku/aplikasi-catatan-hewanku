@@ -2,13 +2,14 @@ import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, M
 import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdPets, MdCameraAlt } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
-import { CacheContext } from "../context/CacheContext.jsx";
+import { CacheContext } from "../utils/CacheContext.jsx";
+import { removeEmojis, sanitizeWeight } from "../utils/textUtils.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
-  "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
-  "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", 
+  "Vaccination", "General Check Up", "Dental Care", "Parasite Control",
+  "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill",
   "Follow-up", "Emergency"
 ];
 
@@ -16,7 +17,7 @@ export default function QuickNotes() {
   const navigate = useNavigate();
   const toast = useToast(); // CHAKRA TOAST HOOK
   const { getCachedData, updateCache } = useContext(CacheContext);
-  
+
   const [ownerId, setOwnerId] = useState(null);
   const [pets, setPets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,25 +49,29 @@ export default function QuickNotes() {
 
   // --- CUSTOM IN-APP ALERT (TOAST) ---
   const showToast = (message, status = "success") => {
-      toast({
-          position: "top",
-          duration: 3500,
-          render: () => (
-              <Box 
-                  bg={status === "error" ? "red.500" : "Primary.800"} 
-                  color="white" 
-                  px={6} py={3} 
-                  borderRadius="30px" 
-                  textAlign="center" 
-                  fontWeight="bold" 
-                  boxShadow="xl"
-                  mt="20px"
-              >
-                  {message}
-              </Box>
-          ),
-      });
+    toast({
+      position: "top",
+      duration: 3500,
+      render: () => (
+        <Box
+          bg={status === "error" ? "red.500" : "Primary.800"}
+          color="white"
+          px={6} py={3}
+          borderRadius="30px"
+          textAlign="center"
+          fontWeight="bold"
+          boxShadow="xl"
+          mt="20px"
+        >
+          {message}
+        </Box>
+      ),
+    });
   };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const ownerData = JSON.parse(localStorage.getItem("owner"));
@@ -172,12 +177,12 @@ export default function QuickNotes() {
           method: 'POST',
           body: petFormData
         });
-        
+
         const petResult = await petResponse.json();
         if (!petResponse.ok) throw new Error(petResult.message || "Failed to save new pet");
-        
-        finalPetId = petResult.data.pet_id; 
-        
+
+        finalPetId = petResult.data.pet_id;
+
         const updatedPets = [...pets, petResult.data];
         setPets(updatedPets);
         updateCache('myPets', updatedPets);
@@ -221,15 +226,13 @@ export default function QuickNotes() {
 
   return (
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px" >
-      
-      <Flex justify="flex-end">
-        <Box cursor="pointer" color="Primary.800" onClick={() => navigate(-1)} >
+
+      <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
+        <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate("/")} >
           <MdArrowBack size="28px" />
         </Box>
+        <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900" textAlign="center">Quick Notes</Text>
       </Flex>
-      <Text fontSize="2xl" fontWeight="medium" color="Primary.800">
-        Quick Notes
-      </Text>
 
       {/* Pet Selector Menu */}
       <Menu matchWidth>
@@ -276,12 +279,12 @@ export default function QuickNotes() {
 
           <Box>
             <Text mb="6px" color="Primary.800" fontSize="sm" >Pet Name</Text>
-            <Input bg="white" border="1px solid" borderColor="Primary.800" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input bg="white" border="1px solid" borderColor="Primary.800" value={name} onChange={(e) => setName(removeEmojis(e.target.value))} />
           </Box>
 
           <Box>
             <Text mb="6px" color="Primary.800" fontSize="sm" >DOB</Text>
-            <Input type="date" bg="white" border="1px solid" borderColor="Primary.800" color="Primary.800" value={dob} onChange={(e) => setDob(e.target.value)} />
+            <Input type="date" bg="white" border="1px solid" borderColor="Primary.800" color="Primary.800" value={dob} onChange={(e) => setDob(removeEmojis(e.target.value))} />
           </Box>
 
           <Menu matchWidth>
@@ -335,33 +338,33 @@ export default function QuickNotes() {
 
       <Box bg="Primary.200" p="12px" borderRadius="10px" flex="1">
         <Text mb="6px" color="Primary.800" fontSize="sm">Examination Date</Text>
-        <Input type="date" bg="Primary.100" border="none" color="Primary.800" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input type="date" bg="Primary.100" border="none" color="Primary.800" value={date} onChange={(e) => setDate(removeEmojis(e.target.value))} />
       </Box>
 
       <Flex gap={4}>
         <Box bg="Primary.200" p="12px" borderRadius="10px" flex="1">
-          <Text mb="6px" color="Primary.800">Weight</Text>
-          <Input bg="Primary.100" border="none" color="Primary.800" value={weight} onChange={(e) => setWeight(e.target.value)} />
+          <Text mb="6px" color="Primary.800">Weight (kg)</Text>
+          <Input bg="Primary.100" border="none" color="Primary.800" value={weight} onChange={(e) => setWeight(sanitizeWeight(e.target.value))} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="10px" flex="1">
-          <Text mb="6px" color="Primary.800">Temperature</Text>
-          <Input bg="Primary.100" border="none" color="Primary.800" value={temperature} onChange={(e) => setTemperature(e.target.value)} />
+          <Text mb="6px" color="Primary.800">Temperature (°C)</Text>
+          <Input bg="Primary.100" border="none" color="Primary.800" value={temperature} onChange={(e) => setTemperature(sanitizeWeight(e.target.value))} />
         </Box>
       </Flex>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px">
         <Text mb="6px" color="Primary.800">Veterinarian</Text>
-        <Input bg="Primary.100" border="none" color="Primary.800" value={vet} onChange={(e) => setVet(e.target.value)} />
+        <Input bg="Primary.100" border="none" color="Primary.800" value={vet} onChange={(e) => setVet(removeEmojis(e.target.value))} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px">
         <Text mb="6px" color="Primary.800">Veterinary Clinic</Text>
-        <Input bg="Primary.100" border="none" color="Primary.800" value={clinic} onChange={(e) => setClinic(e.target.value)} />
+        <Input bg="Primary.100" border="none" color="Primary.800" value={clinic} onChange={(e) => setClinic(removeEmojis(e.target.value))} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="10px">
         <Text mb="6px" color="Primary.800">Medical Note</Text>
-        <Textarea bg="Primary.100" border="none" color="Primary.800" resize="none" h="180px" maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} />
+        <Textarea bg="Primary.100" border="none" color="Primary.800" resize="none" h="180px" maxLength={1000} value={note} onChange={(e) => setNote(removeEmojis(e.target.value))} />
         <Flex justify="flex-end">
           <Text fontSize="sm" color="Primary.800">{note.length}/1000</Text>
         </Flex>

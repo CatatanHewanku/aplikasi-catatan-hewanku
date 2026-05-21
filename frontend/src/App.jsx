@@ -20,7 +20,7 @@ import OTPVerification from "./pages/OTPVerification";
 import ResetPassword from "./pages/ResetPassword";
 import UserProfile from "./pages/UserProfile.jsx";
 import VetClinicDetail from "./pages/VetClinicDetail.jsx";
-import { CacheProvider } from './context/CacheContext.jsx';
+import { CacheProvider } from './utils/CacheContext.jsx';
 
 function App() {
   const isLogin = 

@@ -172,11 +172,9 @@ export class MedicalRecordController {
       let imageUrl = existingRecord.record_image
       if (file) {
         try {
-          // Delete old image if exists
           if (existingRecord.record_image) {
             await deleteFromCloudinary(existingRecord.record_image);
           }
-          // Upload new image
           const result = await uploadToCloudinary(file, 'catatanhewanku/medical-records')
           imageUrl = result.secure_url
         } catch (err) {
@@ -209,26 +207,18 @@ export class MedicalRecordController {
     try {
       const { record_id } = req.params
 
-      if (!record_id) {
-        return res.status(400).json({ message: "Record ID is required" })
-      }
+      if (!record_id) return res.status(400).json({ message: "Record ID is required" })
 
       const existingRecord = await MedicalRecordModel.getRecordById(record_id)
-      if (!existingRecord) {
-        return res.status(404).json({ message: "Medical record not found" })
-      }
-
+      if (!existingRecord) return res.status(404).json({ message: "Medical record not found" })
+      
       // Delete image if exists
       if (existingRecord.record_image) {
         await deleteFromCloudinary(existingRecord.record_image);
       }
 
       const result = await MedicalRecordModel.deleteRecord(record_id)
-
-      res.status(200).json({
-        message: "Medical record deleted successfully",
-        data: result
-      })
+      res.status(200).json({ message: "Medical record deleted successfully", data: result })
     } catch (err) {
       res.status(500).json({ message: err.message })
     }
