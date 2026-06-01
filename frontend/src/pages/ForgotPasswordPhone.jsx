@@ -3,7 +3,8 @@ import { MdPhone, MdArrowBack } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
-import Logo from "../images/Logo.jpeg";
+// import Logo from "../images/Logo.jpeg";
+import Logo from "../images/Logo_fix.PNG";
 
 export default function ForgotPasswordPhone() {
   const navigate = useNavigate();

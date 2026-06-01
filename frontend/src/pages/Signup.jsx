@@ -1,10 +1,11 @@
-import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image } from "@chakra-ui/react";
+import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image, Link } from "@chakra-ui/react";
 import { MdEmail, MdLock, MdPerson, MdPhone, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-import Logo from "../images/Logo.jpeg";
+// import Logo from "../images/Logo.jpeg";
+import Logo from "../images/Logo_fix.PNG";
 
 const validatePassword = (password) => {
   const errors = [];
@@ -168,7 +169,7 @@ export default function SignUp() {
         </Flex>
         <Flex align="center" direction="column">
           <Button
-            mt="40px"
+            mt="20px"
             w="80%"
             h="40px"
             bg="Primary.800"
@@ -185,15 +186,11 @@ export default function SignUp() {
             {isLoading ? "Signing Up..." : "Sign Up"}
           </Button>
 
-          <Text textAlign="center" m="20px" color="Primary.800" >
-            Already have account?
+          <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.800" >
+            Already have account? <Link color="Primary.800" onClick={() => navigate("/login")}>Log In</Link>
           </Text>
 
-          <Button w="80%" h=" 40px" bg="Neutral.100" color="Primary.800" borderRadius="30px" border="2px" borderColor="Primary.800" fontFamily="body" fontSize="xl" fontWeight="medium" boxShadow="md" _hover={{ bg: "Primary.100" }} onClick={() => navigate("/")} >
-            Log In
-          </Button>
         </Flex>
-
       </Box>
 
     </Flex>

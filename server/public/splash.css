@@ -1,0 +1,51 @@
+#app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #f7efe4 0%, #fff6ed 45%, #f3f2f6 100%);
+  transition: opacity 200ms ease;
+}
+
+#app-splash.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: #5f4a3d;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.splash-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(201, 111, 59, 0.25);
+}
+
+.splash-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.splash-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 3px solid rgba(201, 111, 59, 0.2);
+  border-top-color: #c96f3b;
+  animation: splash-spin 900ms linear infinite;
+}
+
+@keyframes splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

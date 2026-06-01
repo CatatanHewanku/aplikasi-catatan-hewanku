@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-import Logo from "../images/Logo.jpeg";
+// import Logo from "../images/Logo.jpeg";
+import Logo from "../images/Logo_fix.PNG";
 const URL_Name = import.meta.env.VITE_API_URL
 
 const validatePassword = (password) => {

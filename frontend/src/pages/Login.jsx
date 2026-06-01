@@ -1,10 +1,11 @@
-import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image } from "@chakra-ui/react";
+import { Flex, Box, Text, Input, Button, InputGroup, InputLeftElement, InputRightElement, Image, Link } from "@chakra-ui/react";
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Logo from "../images/Logo.jpeg";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
+// import Logo from "../images/Logo.jpeg";
+import Logo from "../images/Logo_fix.PNG";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -75,13 +76,10 @@ export default function Login() {
         </Flex>
 
         <Flex align="center" direction="column">
-          <Button mt="40px" w="80%" h="40px" bg="Primary.800" color="Neutral.100" borderRadius="30px" fontWeight="medium" boxShadow="md" _hover={{ opacity: 0.9 }} onClick={handleLogin}>
+          <Button mt="20px" w="80%" h="40px" bg="Primary.800" color="Neutral.100" borderRadius="30px" fontWeight="medium" boxShadow="md" _hover={{ opacity: 0.9 }} onClick={handleLogin}>
             <Text fontFamily="body" fontSize="xl">Log In</Text>
           </Button>
-          <Text textAlign="center" m="20px" color="Primary.800">Don't have an account?</Text>
-          <Button w="80%" h="40px" bg="Neutral.100" color="Primary.800" borderRadius="30px" border="2px" borderColor="Primary.800" fontWeight="medium" boxShadow="md" _hover={{ bg: "Primary.100" }} onClick={() => navigate("/signup")}>
-            <Text fontFamily="body" fontSize="xl">Sign Up</Text>
-          </Button>
+          <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.800">Don't have an account? <Link color="Primary.800" onClick={() => navigate("/signup")}>Sign Up</Link></Text>
         </Flex>
       </Box>
     </Flex>

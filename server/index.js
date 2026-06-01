@@ -1,6 +1,8 @@
 import express from "express"
 import cors from "cors"
 import "dotenv/config"
+import path from "path"
+import { fileURLToPath } from "url"
 import { dbConnection } from "./config/connection.js"
 import { setupSyncCron } from "./services/syncService.js"
 import ownerRoutes from "./routes/ownerRoutes.js"
@@ -13,6 +15,8 @@ import reminderRoutes from "./routes/reminderRoutes.js"
 
 const PORT = process.env.PORT || 4000
 const app = express()
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 app.use(cors({
   credentials: true,
@@ -21,9 +25,13 @@ app.use(cors({
       'https://localhost:5501',
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://6sx5712j-5173.asse.devtunnels.ms'
+      'https://lln24dqg-5173.asse.devtunnels.ms',
+      'https://lln24dqg-4000.asse.devtunnels.ms',
+      'https://6sx5712j-4000.asse.devtunnels.ms'
     ];
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Also allow any devtunnel URL dynamically
+    const isDevtunnel = origin && origin.includes('asse.devtunnels.ms');
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || isDevtunnel) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -33,8 +41,9 @@ app.use(cors({
 }))
 
 app.use(express.json())
+app.use(express.static(path.join(__dirname, "public")))
 
-app.get("/", (req, res) => {
+app.get("/api/status", (req, res) => {
   res.json({
     message: "Server is running",
     routes: {
@@ -57,6 +66,14 @@ app.use("/api/favorites", favoriteClinicRoutes)
 app.use("/api/medical-records", medicalRecordRoutes)
 app.use("/api/reminder", reminderRoutes)
 
+app.use((req, res, next) => {
+  if (req.method !== "GET" || req.path.startsWith("/api")) {
+    return next()
+  }
+
+  return res.sendFile(path.join(__dirname, "public", "index.html"))
+})
+
 app.use((err, req, res, next) => {
   res.status(500).json({
     message: err.message
@@ -73,7 +90,7 @@ dbConnection()
     }
 
     // Move this inside .then() so it waits for DB connection
-    app.listen(process.env.PORT, () => {
+    app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`)
     })
   })

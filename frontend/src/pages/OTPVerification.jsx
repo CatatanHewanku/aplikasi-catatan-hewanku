@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-import Logo from "../images/Logo.jpeg";
+// import Logo from "../images/Logo.jpeg";
+import Logo from "../images/Logo_fix.PNG";
 
 export default function OtpVerification() {
   const navigate = useNavigate();

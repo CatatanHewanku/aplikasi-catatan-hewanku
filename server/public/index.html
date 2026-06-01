@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link href="https://fonts.googleapis.com/css2?family=Aclonica&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#c96f3b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/splash.css" />
+    <title>catatan-hewanku</title>
+    <script>
+      window.__appReady = false;
+      window.__hideAppSplash = function () {
+        const splash = document.getElementById('app-splash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(() => splash.remove(), 220);
+        }
+      };
+
+      window.addEventListener('DOMContentLoaded', function () {
+        window.__appSplashTimer = setTimeout(function () {
+          if (window.__appReady) return;
+
+          const title = document.querySelector('.splash-title');
+          const spinner = document.querySelector('.splash-spinner');
+          if (title) title.textContent = 'Still loading... Check your connection.';
+          if (spinner) spinner.remove();
+        }, 15000);
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-1lIq2vvP.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bz49lv8Z.css">
+  </head>
+  <body>
+    <div id="app-splash" aria-live="polite" aria-label="Loading application">
+      <div class="splash-card">
+        <img class="splash-logo" src="/android-chrome-192x192.png" alt="Catatan Hewanku" />
+        <div class="splash-title">Preparing CatatanHewanku...</div>
+        <div class="splash-spinner" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div id="root"></div>
+  </body>
+</html>
