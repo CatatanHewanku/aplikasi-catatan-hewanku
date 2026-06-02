@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
 // import Logo from "../images/Logo.jpeg";
-import Logo from "../images/Logo_fix.PNG";
+import Logo from "../images/Logo_fix.png";
 
 export default function ForgotPasswordEmail() {
     const navigate = useNavigate();

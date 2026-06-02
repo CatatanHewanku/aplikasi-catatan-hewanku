@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 // import Logo from "../images/Logo.jpeg";
-import Logo from "../images/Logo_fix.PNG";
+import Logo from "../images/Logo_fix.png";
 
 export default function ForgotPasswordPhone() {
   const navigate = useNavigate();
