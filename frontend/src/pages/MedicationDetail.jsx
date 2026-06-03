@@ -1,5 +1,5 @@
-import { Flex, Box, Text, Image, Button, Icon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea, Input, Grid, Menu, MenuButton, MenuList, MenuItem, useToast } from "@chakra-ui/react";
-import { MdArrowBack, MdNotes, MdMedicalServices, MdPets, MdEdit, MdCameraAlt, MdKeyboardArrowDown } from "react-icons/md";
+import { Flex, Box, Text, Image, Button, Icon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea, Input, InputGroup, InputRightElement, Grid, Menu, MenuButton, MenuList, MenuItem, useToast } from "@chakra-ui/react";
+import { MdArrowBack, MdNotes, MdMedicalServices, MdPets, MdEdit, MdCameraAlt, MdKeyboardArrowDown, MdDateRange } from "react-icons/md";
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext";
@@ -43,6 +43,16 @@ export default function MedicationDetail() {
   const [imagePreview, setImagePreview] = useState("");
 
   const [isOpen, setIsOpen] = useState(false);
+
+  const getLocalTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalTodayString();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -126,6 +136,15 @@ export default function MedicationDetail() {
   };
 
   const handleSavePet = async () => {
+    if (!pet_name || !pet_type || !pet_gender) {
+      showToast("Name, Type, and Gender are required!", "error");
+      return;
+    }
+
+    if (pet_dob > todayStr) {
+      showToast("Invalid Date of Birth!", "error");
+      return;
+    }
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -307,7 +326,32 @@ export default function MedicationDetail() {
                 </Box>
               </Flex>
               <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text><Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
-              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text><Input type="date" value={pet_dob} onChange={(e) => setPet_dob(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
+                <InputGroup>
+                  <Input
+                    type="date"
+                    value={pet_dob}
+                    max={todayStr}
+                    textAlign="left"
+                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                    onChange={(e) => setPet_dob(removeEmojis(e.target.value))}
+                    borderColor="Primary.800"
+                    focusBorderColor="Primary.900"
+                    cursor="pointer"
+                    sx={{
+                      "::-webkit-calendar-picker-indicator": {
+                        display: "none",
+                      }
+                    }}
+                  />
+                  <InputRightElement pointerEvents="none">
+                    <Box color="Primary.800">
+                      <MdDateRange size="20px" />
+                    </Box>
+                  </InputRightElement>
+                </InputGroup>
+              </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Type</Text>
                 <Menu matchWidth>

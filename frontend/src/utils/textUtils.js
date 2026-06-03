@@ -14,3 +14,7 @@ export const removeEmojis = (str) => {
 export const sanitizeWeight = (val) => {
   return val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 };
+
+export const sanitizeTemperature = (val) => {
+  return val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+};

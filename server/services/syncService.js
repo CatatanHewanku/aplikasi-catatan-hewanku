@@ -7,7 +7,7 @@ import axios from "axios"
 
 // Bekasi area only (using city name for geocoding)
 const INDONESIAN_CITIES = [
-  { name: 'Bekasi', country: 'Indonesia' }
+  { name: 'Bekasi', country: 'West Java' }
 ]
 
 // Cache metadata: stores which cities were synced and when

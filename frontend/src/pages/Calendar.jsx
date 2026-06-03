@@ -1,7 +1,8 @@
 import {
   Flex, Box, Text, Input, Button, Modal, ModalOverlay, ModalContent,
   ModalHeader, ModalBody, ModalFooter, Select, Popover, PopoverTrigger,
-  PopoverContent, PopoverBody, useToast, useDisclosure
+  PopoverContent, PopoverBody, useToast, useDisclosure,
+  Menu, MenuButton, MenuList, MenuItem
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo, useRef, useContext } from "react";
 import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning, MdKeyboardArrowDown } from "react-icons/md";
@@ -205,12 +206,12 @@ export default function Calendar() {
 
       if (response.ok && result.data) {
         const remindersByDate = {};
-        
+
         result.data.forEach((reminder) => {
           // --- THE BUG FIX IS HERE ---
           // Cuts off the 'T00:00:00' part sent by the database
-          const rawDate = reminder.reminder_date.split('T')[0]; 
-          
+          const rawDate = reminder.reminder_date.split('T')[0];
+
           // Re-pads it to strictly match the YYYY-MM-DD the Grid expects
           const [y, m, d] = rawDate.split('-');
           const cleanDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -275,11 +276,11 @@ export default function Calendar() {
 
       if (response.ok) {
         showToast(`Reminder ${editingReminderId ? "updated" : "saved"}!`, "success");
-        
+
         // Pass "true" to force bypassing the cache so the dot appears instantly!
         await fetchReminders(selectedDate, true);
         await fetchAllRemindersForMonth(true);
-        
+
         setInputText("");
         setInputTime("");
         setSelectedTag("");
@@ -304,7 +305,7 @@ export default function Calendar() {
 
       if (response.ok) {
         showToast("Reminder deleted", "success");
-        
+
         // Pass "true" to force bypassing the cache so the dot vanishes instantly!
         await fetchReminders(eventToDelete.date, true);
         await fetchAllRemindersForMonth(true);
@@ -515,14 +516,51 @@ export default function Calendar() {
                 </Popover>
               </Box>
 
-              <Box>
-                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Category</Text>
-                <Select bg="white" placeholder="No Category" value={selectedTag} onChange={(e) => setSelectedTag(e.target.value)} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800">
-                  {tags.filter(t => t !== "").map((tag, i) => (
-                    <option key={i} value={tag}>{tag}</option>
-                  ))}
-                </Select>
-              </Box>
+              <Menu matchWidth>
+                <MenuButton
+                  as={Flex}
+                  w="100%"
+                  h="40px"
+                  bg="white"
+                  border="1px solid"
+                  borderColor="Primary.300"
+                  borderRadius="md"
+                  px="16px"
+                  cursor="pointer"
+                  alignItems="center"
+                  _hover={{ borderColor: "Primary.800" }}
+                >
+                  <Flex justify="space-between" align="center" h="100%">
+                    <Text color="Primary.900" fontSize="md">
+                      {selectedTag || "No Category"}
+                    </Text>
+                    <MdKeyboardArrowDown color="gray" size="20px" />
+                  </Flex>
+                </MenuButton>
+
+                <MenuList bg="white" borderColor="Primary.300" maxH="200px" overflowY="auto" zIndex={1500} p={0} borderRadius="md" boxShadow="lg">
+                  {tags.map((tag, index, arr) => {
+                    const isSelected = selectedTag === tag;
+                    const displayTag = tag === "" ? "No Category" : tag;
+
+                    return (
+                      <MenuItem
+                        key={tag === "" ? "no-category" : tag}
+                        onClick={() => setSelectedTag(tag)}
+                        bg="white"
+                        _hover={{ bg: "Primary.50" }}
+                        color="Primary.800"
+                        fontWeight={isSelected ? "bold" : "medium"}
+                        borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
+                        borderColor="Primary.300"
+                        py={3}
+                      >
+                        {displayTag}
+                      </MenuItem>
+                    );
+                  })}
+                </MenuList>
+              </Menu>
             </Flex>
           </ModalBody>
 

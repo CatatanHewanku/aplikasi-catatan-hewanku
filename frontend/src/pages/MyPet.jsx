@@ -1,5 +1,5 @@
 import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, IconButton, Menu, MenuButton, MenuList, MenuItem, useToast, useDisclosure } from "@chakra-ui/react";
-import { MdAdd, MdSearch, MdEdit, MdDelete, MdCameraAlt, MdPets, MdKeyboardArrowDown, MdWarning } from "react-icons/md";
+import { MdAdd, MdSearch, MdEdit, MdDelete, MdCameraAlt, MdPets, MdKeyboardArrowDown, MdWarning, MdDateRange } from "react-icons/md";
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext.jsx";
@@ -28,6 +28,16 @@ export default function MyPet() {
   const [pet_image, setPet_image] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const getLocalTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalTodayString();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -109,6 +119,11 @@ export default function MyPet() {
   const savePet = async () => {
     if (!pet_name || !pet_type || !pet_gender) {
       showToast("Name, Type, and Gender are required!", "error");
+      return;
+    }
+
+    if (pet_dob > todayStr) {
+      showToast("Invalid Date of Birth!", "error");
       return;
     }
 
@@ -307,7 +322,29 @@ export default function MyPet() {
               </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
-                <Input type="date" value={pet_dob} onChange={(e) => setPet_dob(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" />
+                <InputGroup>
+                  <Input
+                    type="date"
+                    value={pet_dob}
+                    max={todayStr}
+                    textAlign="left"
+                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                    onChange={(e) => setPet_dob(removeEmojis(e.target.value))}
+                    borderColor="Primary.800"
+                    focusBorderColor="Primary.900"
+                    cursor="pointer"
+                    sx={{
+                      "::-webkit-calendar-picker-indicator": {
+                        display: "none",
+                      }
+                    }}
+                  />
+                  <InputRightElement pointerEvents="none">
+                    <Box color="Primary.800">
+                      <MdDateRange size="20px" />
+                    </Box>
+                  </InputRightElement>
+                </InputGroup>
               </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Type</Text>

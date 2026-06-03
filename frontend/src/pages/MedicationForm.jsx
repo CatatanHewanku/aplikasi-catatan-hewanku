@@ -2,7 +2,7 @@ import { Flex, Box, Text, Input, Textarea, Button, Image, Modal, ModalOverlay, M
 import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdWarning } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { removeEmojis, sanitizeWeight } from "../utils/textUtils";
+import { removeEmojis, sanitizeWeight, sanitizeTemperature } from "../utils/textUtils";
 const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
@@ -44,6 +44,16 @@ export default function MedicationForm() {
         ),
     });
   };
+
+  const getLocalTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalTodayString();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -102,6 +112,11 @@ export default function MedicationForm() {
   const handleSubmit = async () => {
     if (!record_visit_date || !record_consultation_type || !record_vet_name || !record_vet_clinic_name || !record_pet_weight || !record_pet_temperature) {
       showToast("Please fill in all required fields", "error");
+      return;
+    }
+    
+    if (record_visit_date > todayStr) {
+      showToast("Invalid Examination Date!", "error");
       return;
     }
 
@@ -183,15 +198,15 @@ export default function MedicationForm() {
       </Flex>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800" fontWeight="medium">
+        <Text mb="6px" color="Primary.800" fontSize="md">
           Examination Date
         </Text>
-        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(removeEmojis(e.target.value))} />
+        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(removeEmojis(e.target.value))} max={todayStr} />
       </Box>
 
       {/* CHAKRA MENU DROPDOWN FIX */}
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800" fontWeight="medium">
+        <Text mb="6px" color="Primary.800" fontSize="md">
           Consultation Type
         </Text>
         <Menu matchWidth>
@@ -221,7 +236,7 @@ export default function MedicationForm() {
                 <MenuItem 
                   key={opt} 
                   onClick={() => setRecord_consultation_type(opt)} 
-                  bg={isSelected ? "Primary.300" : "Primary.100"} 
+                  bg="white" 
                   _hover={{ bg: "Primary.200" }}
                   color="Primary.800"
                   fontWeight={isSelected ? "bold" : "medium"} 
@@ -238,14 +253,14 @@ export default function MedicationForm() {
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800" fontWeight="medium">
+        <Text mb="6px" color="Primary.800" fontSize="md">
           Veterinarian
         </Text>
         <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(removeEmojis(e.target.value))} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800" fontWeight="medium">
+        <Text mb="6px" color="Primary.800" fontSize="md">
           Veterinary Clinic
         </Text>
         <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(removeEmojis(e.target.value))} />
@@ -253,21 +268,21 @@ export default function MedicationForm() {
 
       <Flex gap={4}>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
-          <Text mb="6px" color="Primary.800" fontWeight="medium">
+          <Text mb="6px" color="Primary.800" fontSize="md">
             Weight (kg)
           </Text>
           <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(sanitizeWeight(e.target.value))} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
-          <Text mb="6px" color="Primary.800" fontWeight="medium">
+          <Text mb="6px" color="Primary.800" fontSize="md">
             Temperature (°C)
           </Text>
-          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(sanitizeWeight(e.target.value))} />
+          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(sanitizeTemperature(e.target.value))} />
         </Box>
       </Flex>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
-        <Text mb="6px" color="Primary.800" fontWeight="medium">
+        <Text mb="6px" color="Primary.800" fontSize="md">
           Medical Note
         </Text>
         <Textarea
