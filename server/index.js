@@ -21,19 +21,19 @@ const __dirname = path.dirname(__filename)
 app.use(cors({
   credentials: true,
   origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
     const allowedOrigins = [
-      'https://localhost:5501',
-      'http://localhost:3000',
       'http://localhost:5173',
+      'http://localhost:4000',
       'https://lln24dqg-5173.asse.devtunnels.ms',
-      'https://lln24dqg-4000.asse.devtunnels.ms',
-      'https://6sx5712j-4000.asse.devtunnels.ms'
+      'https://lln24dqg-4000.asse.devtunnels.ms'
     ];
-    // Also allow any devtunnel URL dynamically
-    const isDevtunnel = origin && origin.includes('asse.devtunnels.ms');
+    const isDevtunnel = origin.includes('.devtunnels.ms');
     if (!origin || allowedOrigins.indexOf(origin) !== -1 || isDevtunnel) {
       callback(null, true);
     } else {
+      console.log(`Blocked by CORS: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },

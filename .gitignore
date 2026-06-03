@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 notincluded/
+server/public/
 
 # Build output
 dist/
