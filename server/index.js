@@ -13,7 +13,7 @@ import favoriteClinicRoutes from "./routes/favoriteClinicRoutes.js"
 import medicalRecordRoutes from "./routes/medicalRecordRoutes.js"
 import reminderRoutes from "./routes/reminderRoutes.js"
 
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 1433
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

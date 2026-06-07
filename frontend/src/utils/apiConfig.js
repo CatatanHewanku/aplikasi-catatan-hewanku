@@ -9,7 +9,7 @@ export const getAPIUrl = () => {
     return window.location.origin;
   } else {
     // In development, use VITE_API_URL or default to localhost
-    return import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    return import.meta.env.VITE_API_URL || 'http://localhost:1433';
   }
 };
 
