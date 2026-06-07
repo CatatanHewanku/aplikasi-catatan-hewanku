@@ -13,7 +13,7 @@ import favoriteClinicRoutes from "./routes/favoriteClinicRoutes.js"
 import medicalRecordRoutes from "./routes/medicalRecordRoutes.js"
 import reminderRoutes from "./routes/reminderRoutes.js"
 
-const PORT = process.env.PORT || 1433
+const PORT = process.env.PORT || 8080
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -22,8 +22,8 @@ app.use(cors({
   credentials: true,
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    
-    callback(null, true); 
+
+    callback(null, true);
   },
   methods: ["GET", "POST", "PATCH", "DELETE"]
 }))
@@ -77,10 +77,9 @@ dbConnection()
       console.log("⚠️ Auto-sync disabled (development mode)")
     }
 
-    // Move this inside .then() so it waits for DB connection
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`)
-    })
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   })
   .catch(err => {
     console.error("Database connection failed:", err)
