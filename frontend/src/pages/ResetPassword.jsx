@@ -6,7 +6,6 @@ import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
 // import Logo from "../images/Logo.jpeg";
 import Logo from "../images/Logo_fix.png";
-const URL_Name = import.meta.env.VITE_API_URL
 
 const validatePassword = (password) => {
   const errors = [];
@@ -78,12 +77,10 @@ export default function ResetPassword() {
 
     try {
       if (isChangeMode) {
-        // --- 1. CHANGE PASSWORD FLOW (Logged In User) ---
         const formData = new FormData();
         formData.append("password", password);
 
-        // Reusing the exact same endpoint from UserProfile
-        const response = await fetch(`${URL_Name}/api/owners/${loggedInOwner.owner_id}`, {
+        const response = await fetch(`/api/owners/${loggedInOwner.owner_id}`, {
           method: "PATCH",
           body: formData
         });

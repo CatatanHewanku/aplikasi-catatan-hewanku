@@ -3,7 +3,6 @@ import { MdArrowBack, MdLocationOn, MdPhone, MdMap } from "react-icons/md";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DogHouse from "../images/defaultPet.jpeg";
-const URL_Name = import.meta.env.VITE_API_URL
 
 export default function VetClinicDetail() {
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ export default function VetClinicDetail() {
   useEffect(() => {
     const fetchClinicDetails = async () => {
       try {
-        const response = await fetch(`${URL_Name}/api/vet-clinics/${clinic_id}`);
+        const response = await fetch(`/api/vet-clinics/${clinic_id}`);
         const result = await response.json();
 
         if (response.ok) {

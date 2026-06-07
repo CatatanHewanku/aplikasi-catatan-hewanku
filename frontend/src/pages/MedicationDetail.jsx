@@ -5,7 +5,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext";
 import { removeEmojis } from "../utils/textUtils";
 import DefaultPet from "../images/defaultPet.jpeg";
-const URL_Name = import.meta.env.VITE_API_URL
 
 const calculateAgeCategory = (dobString) => {
   if (!dobString) return null;
@@ -73,7 +72,7 @@ export default function MedicationDetail() {
   useEffect(() => {
     const fetchPetData = async () => {
       try {
-        const petResponse = await fetch(`${URL_Name}/api/pets/${id}`);
+        const petResponse = await fetch(`/api/pets/${id}`);
         const petResult = await petResponse.json();
         if (petResponse.ok) {
           setPet(petResult.data);
@@ -86,7 +85,7 @@ export default function MedicationDetail() {
 
     const fetchMedicalRecords = async () => {
       try {
-        const response = await fetch(`${URL_Name}/api/medical-records/pet/${id}`);
+        const response = await fetch(`/api/medical-records/pet/${id}`);
         const result = await response.json();
         if (response.ok) {
           const sortedLogs = (result.data || []).sort((a, b) => new Date(b.record_visit_date) - new Date(a.record_visit_date));
@@ -154,7 +153,7 @@ export default function MedicationDetail() {
       formData.append('pet_gender', pet_gender);
       if (pet_image) formData.append('pet_image', pet_image);
 
-      const response = await fetch(`${URL_Name}/api/pets/${id}`, { method: 'PATCH', body: formData });
+      const response = await fetch(`/api/pets/${id}`, { method: 'PATCH', body: formData });
       const result = await response.json();
 
       if (response.ok) {
@@ -182,7 +181,7 @@ export default function MedicationDetail() {
 
   const handleSaveNotes = async () => {
     try {
-      const response = await fetch(`${URL_Name}/api/pets/${id}`, {
+      const response = await fetch(`/api/pets/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pet_name: pet.pet_name, pet_dob: pet.pet_dob, pet_type: pet.pet_type, pet_gender: pet.pet_gender, pet_note: tempNotes })

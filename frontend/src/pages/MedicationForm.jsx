@@ -3,7 +3,6 @@ import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdWarn
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { removeEmojis, sanitizeWeight, sanitizeTemperature } from "../utils/textUtils";
-const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
   "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
@@ -64,7 +63,7 @@ export default function MedicationForm() {
 
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`${URL_Name}/api/medical-records/${logId}`);
+        const response = await fetch(`/api/medical-records/${logId}`);
         const result = await response.json();
 
         if (response.ok) {
@@ -141,8 +140,8 @@ export default function MedicationForm() {
       }
 
       const url = isEditMode
-        ? `${URL_Name}/api/medical-records/${logId}`
-        : `${URL_Name}/api/medical-records`;
+        ? `/api/medical-records/${logId}`
+        : `/api/medical-records`;
 
       const method = isEditMode ? 'PATCH' : 'POST';
 
@@ -165,7 +164,7 @@ export default function MedicationForm() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${URL_Name}/api/medical-records/${logId}`, {
+      const response = await fetch(`/api/medical-records/${logId}`, {
         method: 'DELETE'
       });
 

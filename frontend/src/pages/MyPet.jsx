@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis } from "../utils/textUtils.js";
 import DefaultPet from "../images/defaultPet.jpeg";
-const URL_Name = import.meta.env.VITE_API_URL
 
 export default function MyPet() {
   const navigate = useNavigate();
@@ -67,7 +66,7 @@ export default function MyPet() {
         const ownerData = JSON.parse(localStorage.getItem("owner"));
         if (!ownerData?.owner_id) return;
 
-        const response = await fetch(`${URL_Name}/api/pets/owner/${ownerData.owner_id}`);
+        const response = await fetch(`/api/pets/owner/${ownerData.owner_id}`);
         const result = await response.json();
 
         if (response.ok) {
@@ -147,8 +146,8 @@ export default function MyPet() {
       }
 
       const url = editingPetId
-        ? `${URL_Name}/api/pets/${editingPetId}`
-        : `${URL_Name}/api/pets`;
+        ? `/api/pets/${editingPetId}`
+        : `/api/pets`;
 
       const method = editingPetId ? 'PATCH' : 'POST';
 
@@ -206,7 +205,7 @@ export default function MyPet() {
   const deletePet = async () => {
     if (!petToDelete) return;
     try {
-      const response = await fetch(`${URL_Name}/api/pets/${petToDelete}`, { method: 'DELETE' });
+      const response = await fetch(`/api/pets/${petToDelete}`, { method: 'DELETE' });
 
       if (response.ok) {
         const updated = pets.filter((pet) => pet.pet_id !== petToDelete);

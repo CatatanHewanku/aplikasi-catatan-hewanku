@@ -5,7 +5,6 @@ import { useState, useEffect, useContext } from "react";
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis, sanitizeWeight } from "../utils/textUtils.js";
 import DefaultPet from "../images/defaultPet.jpeg";
-const URL_Name = import.meta.env.VITE_API_URL
 
 const consultationOptions = [
   "Vaccination", "General Check Up", "Dental Care", "Parasite Control",
@@ -95,7 +94,7 @@ export default function QuickNotes() {
           setPets(cachedPets);
         }
 
-        const response = await fetch(`${URL_Name}/api/pets/owner/${ownerData.owner_id}`);
+        const response = await fetch(`/api/pets/owner/${ownerData.owner_id}`);
         const result = await response.json();
 
         if (response.ok) {
@@ -193,7 +192,7 @@ export default function QuickNotes() {
         petFormData.append('pet_gender', gender);
         if (petImage) petFormData.append('pet_image', petImage);
 
-        const petResponse = await fetch(`${URL_Name}/api/pets`, {
+        const petResponse = await fetch(`/api/pets`, {
           method: 'POST',
           body: petFormData
         });
@@ -219,7 +218,7 @@ export default function QuickNotes() {
       if (note) recordFormData.append('record_note', note);
       if (photo) recordFormData.append('record_image', photo);
 
-      const recordResponse = await fetch(`${URL_Name}/api/medical-records`, {
+      const recordResponse = await fetch(`/api/medical-records`, {
         method: 'POST',
         body: recordFormData
       });

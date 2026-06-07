@@ -23,19 +23,7 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:4000',
-      'https://lln24dqg-5173.asse.devtunnels.ms',
-      'https://lln24dqg-4000.asse.devtunnels.ms'
-    ];
-    const isDevtunnel = origin.includes('.devtunnels.ms');
-    if (!origin || allowedOrigins.indexOf(origin) !== -1 || isDevtunnel) {
-      callback(null, true);
-    } else {
-      console.log(`Blocked by CORS: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true); 
   },
   methods: ["GET", "POST", "PATCH", "DELETE"]
 }))

@@ -5,7 +5,6 @@ import { CacheContext } from '../utils/CacheContext.jsx';
 import { useNavigate } from "react-router-dom";
 import { removeEmojis } from "../utils/textUtils.js";
 import DogHouse from "../images/DogHouse.jpeg";
-const URL_Name = import.meta.env.VITE_API_URL
 
 export default function Vet() {
   const toast = useToast();
@@ -59,7 +58,7 @@ export default function Vet() {
 
     const fetchClinics = async () => {
       try {
-        const response = await fetch(`${URL_Name}/api/vet-clinics`);
+        const response = await fetch(`/api/vet-clinics`);
         const result = await response.json();
 
         if (response.ok) {
@@ -71,7 +70,7 @@ export default function Vet() {
 
           if (owner_id) {
             try {
-              const favResponse = await fetch(`${URL_Name}/api/favorites/owner/${owner_id}`);
+              const favResponse = await fetch(`/api/favorites/owner/${owner_id}`);
               if (favResponse.ok) {
                 const favResult = await favResponse.json();
                 const favoriteIds = (favResult.data || []).map(fav => fav.clinic_id);
@@ -136,13 +135,13 @@ export default function Vet() {
 
     try {
       if (isFavorite) {
-        await fetch(`${URL_Name}/api/favorites`, {
+        await fetch(`/api/favorites`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ owner_id, clinic_id })
         });
       } else {
-        const response = await fetch(`${URL_Name}/api/favorites`, {
+        const response = await fetch(`/api/favorites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ owner_id, clinic_id })

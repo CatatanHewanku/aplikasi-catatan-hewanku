@@ -9,8 +9,6 @@ import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning,
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis } from "../utils/textUtils.js";
 
-const URL_Name = import.meta.env.VITE_API_URL
-
 // --- CUSTOM ALARM/CLOCK WHEEL COMPONENT ---
 const ScrollWheel = ({ items, selectedValue, onSelect }) => {
   const containerRef = useRef(null);
@@ -171,7 +169,7 @@ export default function Calendar() {
         }
       }
 
-      const response = await fetch(`${URL_Name}/api/reminder?owner_id=${ownerData.owner_id}&reminder_date=${date}`);
+      const response = await fetch(`/api/reminder?owner_id=${ownerData.owner_id}&reminder_date=${date}`);
       const result = await response.json();
 
       if (response.ok) {
@@ -200,7 +198,7 @@ export default function Calendar() {
       }
 
       const response = await fetch(
-        `${URL_Name}/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
+        `/api/reminder/month?owner_id=${ownerData.owner_id}&year=${year}&month=${month + 1}`
       );
       const result = await response.json();
 
@@ -263,8 +261,8 @@ export default function Calendar() {
       }
 
       const url = editingReminderId
-        ? `${URL_Name}/api/reminder/${editingReminderId}`
-        : `${URL_Name}/api/reminder`;
+        ? `/api/reminder/${editingReminderId}`
+        : `/api/reminder`;
 
       const method = editingReminderId ? "PATCH" : "POST";
 
@@ -301,7 +299,7 @@ export default function Calendar() {
   const confirmDeleteEvent = async () => {
     if (!eventToDelete) return;
     try {
-      const response = await fetch(`${URL_Name}/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
+      const response = await fetch(`/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
 
       if (response.ok) {
         showToast("Reminder deleted", "success");
