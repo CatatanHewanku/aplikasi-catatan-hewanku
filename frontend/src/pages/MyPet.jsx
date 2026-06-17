@@ -4,6 +4,7 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis } from "../utils/textUtils.js";
+import { secureFetch } from "../utils/api.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 
 export default function MyPet() {
@@ -67,7 +68,13 @@ export default function MyPet() {
         const ownerData = JSON.parse(localStorage.getItem("owner"));
         if (!ownerData?.owner_id) return;
 
-        const response = await fetch(`/api/pets/owner/${ownerData.owner_id}`);
+        const response = await secureFetch(`/api/pets/owner/${ownerData.owner_id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-owner-id': ownerData.owner_id
+          }
+        });
         const result = await response.json();
 
         if (response.ok) {
@@ -75,6 +82,8 @@ export default function MyPet() {
           setPets(petsData);
           updateCache('myPets', petsData);
           localStorage.setItem("pets", JSON.stringify(petsData));
+        } else {
+          showToast(result.message || "Unauthorized access", "error");
         }
       } catch (error) {
         console.error("Error fetching pets:", error);
@@ -158,7 +167,7 @@ export default function MyPet() {
         formData.append('owner_id', ownerData.owner_id);
       }
 
-      const response = await fetch(url, { method: method, body: formData });
+      const response = await secureFetch(url, { method: method, body: formData });
       const result = await response.json();
 
       if (response.ok) {
@@ -208,7 +217,7 @@ export default function MyPet() {
   const deletePet = async () => {
     if (!petToDelete) return;
     try {
-      const response = await fetch(`/api/pets/${petToDelete}`, { method: 'DELETE' });
+      const response = await secureFetch(`/api/pets/${petToDelete}`, { method: 'DELETE' });
 
       if (response.ok) {
         const updated = pets.filter((pet) => pet.pet_id !== petToDelete);

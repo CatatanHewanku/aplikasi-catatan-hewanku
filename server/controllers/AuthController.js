@@ -6,7 +6,6 @@ import { PasswordResetModel } from "../models/PasswordResetModel.js"
 import { UserSessionModel } from "../models/UserSessionModel.js"
 
 export class AuthController {
-  // Login - Accept email or phone number
   static async login(req, res) {
     try {
       const { identifier, password, device_id } = req.body
@@ -17,14 +16,12 @@ export class AuthController {
 
       console.log("Login attempt with identifier:", identifier, "device:", device_id)
 
-      // Get owner by email or phone
       const owner = await OwnerModel.getOwnerByEmailOrPhone(identifier)
       
       if (!owner) {
         return res.status(401).json({ message: "Invalid email/phone or password" })
       }
 
-      // Check if this device already has an active session (from any user)
       const activeSession = await UserSessionModel.getActiveSessionByDevice(device_id)
       if (activeSession) {
         return res.status(403).json({ 
@@ -33,27 +30,21 @@ export class AuthController {
         })
       }
 
-      // Compare password
-      const isPasswordValid = await bcrypt.compare(password, owner.owner_password_hash)
-      
+      const isPasswordValid = await bcrypt.compare(password, owner.owner_password_hash)    
       if (!isPasswordValid) {
         return res.status(401).json({ message: "Invalid email/phone or password" })
       }
 
-      // Determine login method (email or phone)
       const loginMethod = identifier.includes('@') ? 'email' : 'phone'
 
-      // Generate JWT token
       const token = jwt.sign(
         { owner_id: owner.owner_id, owner_email: owner.owner_email },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       )
 
-      // Calculate expiry
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-      // Create session with device_id
       await UserSessionModel.createSession(owner.owner_id, device_id, token, expiresAt)
 
       res.status(200).json({
