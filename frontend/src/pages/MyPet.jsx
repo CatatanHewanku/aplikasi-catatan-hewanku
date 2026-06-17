@@ -56,6 +56,7 @@ export default function MyPet() {
 
   useEffect(() => {
     const fetchPets = async () => {
+      setIsLoading(true);
       try {
         const cachedPets = getCachedData('myPets');
         if (cachedPets && cachedPets.length > 0) {
@@ -77,6 +78,8 @@ export default function MyPet() {
         }
       } catch (error) {
         console.error("Error fetching pets:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -246,29 +249,37 @@ export default function MyPet() {
       </InputGroup>
 
       <Flex direction="column" gap={4} mt={2}>
-        {filteredPets.map((pet) => (
-          <Flex key={pet.pet_id} align="center" justify="space-between" w="100%">
-            <Flex align="center" gap={4} cursor={isEdit ? "default" : "pointer"} onClick={() => !isEdit && navigate(`/mypet/${pet.pet_id}`)} flex="1" overflow="hidden">
-              <Image src={pet.pet_image || DefaultPet} boxSize="70px" minW="70px" borderRadius="full" objectFit="cover" />
-              <Flex direction="column" gap={0} flex="1" overflow="hidden">
-                <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>{pet.pet_name}</Text>
-                <Text fontFamily="body" fontSize="sm" color="Primary.800" isTruncated mt={1}>{pet.pet_type}</Text>
-              </Flex>
-            </Flex>
-
-            {isEdit && (
-              <Flex gap={2} pl={4}>
-                <IconButton icon={<MdEdit />} colorScheme="blue" size="sm" borderRadius="full" onClick={() => openEditModal(pet)} aria-label="Edit Pet" />
-                <IconButton icon={<MdDelete />} colorScheme="red" size="sm" borderRadius="full" aria-label="Delete Pet"
-                  onClick={() => {
-                    setPetToDelete(pet.pet_id);
-                    onOpenDelete();
-                  }}
-                />
-              </Flex>
-            )}
+        {isLoading ? (
+          <Flex justify="center" align="center" py="20px">
+            <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="Primary.800" size="xl" />
           </Flex>
-        ))}
+        ) : (
+          <Flex direction="column" gap={4} mt={2}>
+            {filteredPets.map((pet) => (
+              <Flex key={pet.pet_id} align="center" justify="space-between" w="100%">
+                <Flex align="center" gap={4} cursor={isEdit ? "default" : "pointer"} onClick={() => !isEdit && navigate(`/mypet/${pet.pet_id}`)} flex="1" overflow="hidden">
+                  <Image src={pet.pet_image || DefaultPet} boxSize="70px" minW="70px" borderRadius="full" objectFit="cover" />
+                  <Flex direction="column" gap={0} flex="1" overflow="hidden">
+                    <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>{pet.pet_name}</Text>
+                    <Text fontFamily="body" fontSize="sm" color="Primary.800" isTruncated mt={1}>{pet.pet_type}</Text>
+                  </Flex>
+                </Flex>
+
+                {isEdit && (
+                  <Flex gap={2} pl={4}>
+                    <IconButton icon={<MdEdit />} colorScheme="blue" size="sm" borderRadius="full" onClick={() => openEditModal(pet)} aria-label="Edit Pet" />
+                    <IconButton icon={<MdDelete />} colorScheme="red" size="sm" borderRadius="full" aria-label="Delete Pet"
+                      onClick={() => {
+                        setPetToDelete(pet.pet_id);
+                        onOpenDelete();
+                      }}
+                    />
+                  </Flex>
+                )}
+              </Flex>
+            ))}
+          </Flex>
+        )}
       </Flex>
 
       <Flex direction="column" gap={4} pt="30px" pb="120px">
