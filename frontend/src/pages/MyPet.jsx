@@ -73,7 +73,7 @@ export default function MyPet() {
         updateCache('myPets', petsData);
       } catch (error) {
         console.error("Error fetching pets:", error);
-        showToast("Gagal memuat data", "error");
+        showToast("Error fetching data", "error");
       } finally {
         setIsLoading(false);
       }
