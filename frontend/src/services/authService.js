@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.PROD
   ? window.location.origin
-  : (import.meta.env.VITE_API_URL || 'http://localhost:8080');
+  : (import.meta.env.VITE_API_URL || 'http://localhost:4000');
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -22,6 +22,10 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+function generateDeviceId() {
+  return `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 export const authService = {
   login: async (identifier, password) => {
@@ -81,13 +85,14 @@ export const authService = {
       localStorage.removeItem('token');
       localStorage.removeItem('owner');
       localStorage.removeItem('isLogin');
+      localStorage.removeItem('pets');
     }
   },
 
   forgotPassword: async (identifier) => {
     try {
       const response = await api.post('/auth/forgot-password', {
-        identifier: identifier,  // Can be email or phone
+        identifier: identifier,
       });
       return response.data;
     } catch (error) {
@@ -97,19 +102,15 @@ export const authService = {
 
   verifyCode: async (identifier, code) => {
     try {
-      // Try to fetch owner_id by email first
       let ownerResponse;
-      let owner_id;
       
       try {
         ownerResponse = await api.get(`/owners/email/${identifier}`);
-        owner_id = ownerResponse.data.data?.owner_id;
       } catch (error) {
-        // If email fails, try by phone
         ownerResponse = await api.get(`/owners/phone/${identifier}`);
-        owner_id = ownerResponse.data.data?.owner_id;
       }
       
+      const owner_id = ownerResponse.data.data?.owner_id;
       if (!owner_id) {
         throw { message: "User not found" };
       }
@@ -119,7 +120,6 @@ export const authService = {
         verification_code: code,
       });
       
-      // Store for next step
       localStorage.setItem("resetCode", code);
       localStorage.setItem("resetOwnerId", owner_id);
       
@@ -131,19 +131,14 @@ export const authService = {
 
   resetPassword: async (identifier, code, newPassword) => {
     try {
-      // Try to fetch owner_id by email first
       let ownerResponse;
-      let owner_id;
-      
       try {
         ownerResponse = await api.get(`/owners/email/${identifier}`);
-        owner_id = ownerResponse.data.data?.owner_id;
       } catch (error) {
-        // If email fails, try by phone
         ownerResponse = await api.get(`/owners/phone/${identifier}`);
-        owner_id = ownerResponse.data.data?.owner_id;
       }
       
+      const owner_id = ownerResponse.data.data?.owner_id;
       if (!owner_id) {
         throw { message: "User not found" };
       }
@@ -159,9 +154,5 @@ export const authService = {
     }
   },
 };
-
-function generateDeviceId() {
-  return `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
 
 export default api;

@@ -1,8 +1,7 @@
-import { Routes, Route } from "react-router-dom";
+import { useState } from 'react'
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./utils/ProtectedRoute.jsx";
-import { useState } from 'react'
-import { useNavigate } from "react-router-dom";
 import './App.css'
 import Home from './pages/Home'
 import Navbar from './pages/Navbar'
@@ -26,7 +25,7 @@ import { CacheProvider } from './utils/CacheContext.jsx';
 function App() {
   const isLogin = 
   localStorage.getItem("isLogin") === "true";
-  const navigate = useNavigate();
+  const Navigate = useNavigate();
   
   if(!isLogin){
     return(

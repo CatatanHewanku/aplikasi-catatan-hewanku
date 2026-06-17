@@ -1,9 +1,10 @@
-import { Flex, Box, Text, Image, Button, Icon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea, Input, InputGroup, InputRightElement, Grid, Menu, MenuButton, MenuList, MenuItem, useToast } from "@chakra-ui/react";
+import { Flex, Box, Text, Image, Button, Icon, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Textarea, Input, InputGroup, InputRightElement, Grid, Menu, MenuButton, MenuList, MenuItem, useToast, Spinner } from "@chakra-ui/react";
 import { MdArrowBack, MdNotes, MdMedicalServices, MdPets, MdEdit, MdCameraAlt, MdKeyboardArrowDown, MdDateRange } from "react-icons/md";
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext";
 import { removeEmojis } from "../utils/textUtils";
+import api from "../services/authService.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 
 const calculateAgeCategory = (dobString) => {
@@ -70,46 +71,31 @@ export default function MedicationDetail() {
   };
 
   useEffect(() => {
-    const fetchPetData = async () => {
-      try {
-        const petResponse = await fetch(`/api/pets/${id}`);
-        const petResult = await petResponse.json();
-        if (petResponse.ok) {
-          setPet(petResult.data);
-          setNotes(petResult.data.pet_note || "");
-        }
-      } catch (error) {
-        console.error("Error fetching pet:", error);
-      }
-    };
-
-    const fetchMedicalRecords = async () => {
-      try {
-        const response = await fetch(`/api/medical-records/pet/${id}`);
-        const result = await response.json();
-        if (response.ok) {
-          const sortedLogs = (result.data || []).sort((a, b) => new Date(b.record_visit_date) - new Date(a.record_visit_date));
-          setLogs(sortedLogs);
-        }
-      } catch (error) {
-        console.error("Error fetching medical records:", error);
-      }
-    };
-
     const loadAllData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchPetData(), fetchMedicalRecords()]);
-      setIsLoading(false);
+      try {
+        const [petRes, logsRes] = await Promise.all([
+          api.get(`/pets/${id}`),
+          api.get(`/medical-records/pet/${id}`)
+        ]);
+
+        if (petRes.data) {
+          setPet(petRes.data.data);
+          setNotes(petRes.data.data.pet_note || "");
+        }
+
+        const sortedLogs = (logsRes.data.data || []).sort((a, b) => new Date(b.record_visit_date) - new Date(a.record_visit_date));
+        setLogs(sortedLogs);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        showToast("Failed to load data", "error");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchPetData();
-    fetchMedicalRecords();
-    setIsLoading(false);
     loadAllData();
   }, [id]);
-
-  if (isLoading) return <Flex justify="center" align="center" minH="100vh"><Text>Loading...</Text></Flex>;
-  if (!pet) return <Flex justify="center" align="center" minH="100vh"><Text>Pet not found</Text></Flex>;
 
   const handleOpenPetEdit = () => {
     setPet_name(pet.pet_name || "");
@@ -135,15 +121,6 @@ export default function MedicationDetail() {
   };
 
   const handleSavePet = async () => {
-    if (!pet_name || !pet_type || !pet_gender) {
-      showToast("Name, Type, and Gender are required!", "error");
-      return;
-    }
-
-    if (pet_dob > todayStr) {
-      showToast("Invalid Date of Birth!", "error");
-      return;
-    }
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -153,27 +130,17 @@ export default function MedicationDetail() {
       formData.append('pet_gender', pet_gender);
       if (pet_image) formData.append('pet_image', pet_image);
 
-      const response = await fetch(`/api/pets/${id}`, { method: 'PATCH', body: formData });
-      const result = await response.json();
+      const response = await api.patch(`/pets/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-      if (response.ok) {
-        const finalImageUrl = result.data?.pet_image || imagePreview || DefaultPet;
-        const updatedPet = { ...pet, pet_name, pet_dob, pet_type, pet_gender, pet_image: finalImageUrl };
-        setPet(updatedPet);
-
-        const allPets = JSON.parse(localStorage.getItem("pets")) || [];
-        const updatedPets = allPets.map((p) => p.pet_id === parseInt(id) ? updatedPet : p);
-        localStorage.setItem("pets", JSON.stringify(updatedPets));
-        updateCache('myPets', updatedPets);
-
-        showToast("Pet profile updated successfully!");
+      if (response.data) {
+        setPet(response.data.data);
+        showToast("Pet profile updated!");
         setIsOpen(false);
-      } else {
-        showToast(result.message || "Failed to update pet", "error");
       }
     } catch (error) {
-      console.error("Error saving pet:", error);
-      showToast("Error saving pet", "error");
+      showToast("Failed to update pet", "error");
     } finally {
       setIsSaving(false);
     }
@@ -181,25 +148,27 @@ export default function MedicationDetail() {
 
   const handleSaveNotes = async () => {
     try {
-      const response = await fetch(`/api/pets/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pet_name: pet.pet_name, pet_dob: pet.pet_dob, pet_type: pet.pet_type, pet_gender: pet.pet_gender, pet_note: tempNotes })
+      // Gunakan api.patch
+      const response = await api.patch(`/pets/${id}`, {
+        pet_name: pet.pet_name,
+        pet_dob: pet.pet_dob,
+        pet_type: pet.pet_type,
+        pet_gender: pet.pet_gender,
+        pet_note: tempNotes
       });
-      const result = await response.json();
 
-      if (response.ok) {
+      if (response.data) {
         setNotes(tempNotes);
         setIsNotesOpen(false);
-        showToast("Notes saved successfully");
-      } else {
-        showToast(result.message || "Failed to save notes", "error");
+        showToast("Notes saved!");
       }
     } catch (error) {
-      console.error("Error saving notes:", error);
-      showToast("Error saving notes", "error");
+      showToast("Failed to save notes", "error");
     }
   };
+
+  if (isLoading) return <Flex justify="center" align="center" minH="100vh"><Spinner size="xl" /></Flex>;
+  if (!pet) return <Flex justify="center" align="center" minH="100vh"><Text>Pet not found</Text></Flex>;
 
   return (
     <Flex direction="column" p="20px" gap={5} minH="100vh" pb="120px">

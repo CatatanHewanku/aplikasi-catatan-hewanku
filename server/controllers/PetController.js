@@ -52,7 +52,7 @@ export class PetController {
 
   static async getPetsByOwner(req, res) {
     try {
-      const { owner_id } = req.params
+      const { owner_id } = req.user
 
       if (!owner_id) {
         return res.status(400).json({ message: "Owner ID is required" })

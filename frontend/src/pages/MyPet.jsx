@@ -4,7 +4,7 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis } from "../utils/textUtils.js";
-import { secureFetch } from "../utils/api.js";
+import api from "../services/authService.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 
 export default function MyPet() {
@@ -62,31 +62,18 @@ export default function MyPet() {
         const cachedPets = getCachedData('myPets');
         if (cachedPets && cachedPets.length > 0) {
           setPets(cachedPets);
+          setIsLoading(false);
           return;
         }
 
-        const ownerData = JSON.parse(localStorage.getItem("owner"));
-        if (!ownerData?.owner_id) return;
+        const response = await api.get('/pets/owner');
+        const petsData = response.data.data || [];
 
-        const response = await secureFetch(`/api/pets/owner/${ownerData.owner_id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-owner-id': ownerData.owner_id
-          }
-        });
-        const result = await response.json();
-
-        if (response.ok) {
-          const petsData = result.data || [];
-          setPets(petsData);
-          updateCache('myPets', petsData);
-          localStorage.setItem("pets", JSON.stringify(petsData));
-        } else {
-          showToast(result.message || "Unauthorized access", "error");
-        }
+        setPets(petsData);
+        updateCache('myPets', petsData);
       } catch (error) {
         console.error("Error fetching pets:", error);
+        showToast("Gagal memuat data", "error");
       } finally {
         setIsLoading(false);
       }
@@ -133,20 +120,8 @@ export default function MyPet() {
       return;
     }
 
-    if (pet_dob > todayStr) {
-      showToast("Invalid Date of Birth!", "error");
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const ownerData = JSON.parse(localStorage.getItem("owner"));
-      if (!ownerData?.owner_id) {
-        showToast("User not found", "error");
-        setIsLoading(false);
-        return;
-      }
-
       const formData = new FormData();
       formData.append('pet_name', pet_name);
       formData.append('pet_dob', pet_dob);
@@ -157,50 +132,48 @@ export default function MyPet() {
         formData.append('pet_image', pet_image);
       }
 
-      const url = editingPetId
-        ? `/api/pets/${editingPetId}`
-        : `/api/pets`;
-
-      const method = editingPetId ? 'PATCH' : 'POST';
-
-      if (!editingPetId) {
-        formData.append('owner_id', ownerData.owner_id);
-      }
-
-      const response = await secureFetch(url, { method: method, body: formData });
-      const result = await response.json();
-
-      if (response.ok) {
-        const returnedImage = result.data?.pet_image || imagePreview || DefaultPet;
-        let updatedPets = [];
-
-        if (editingPetId) {
-          updatedPets = pets.map(p => p.pet_id === editingPetId ? {
-            ...p, pet_name, pet_dob, pet_type, pet_gender, pet_image: returnedImage
-          } : p);
-          showToast("Pet updated successfully");
-        } else {
-          const newPet = {
-            pet_id: result.data.pet_id, pet_name, pet_dob, pet_type, pet_gender, pet_image: returnedImage
-          };
-          updatedPets = [...pets, newPet];
-          showToast("Pet added successfully");
-        }
-
-        setPets(updatedPets);
-        updateCache('myPets', updatedPets);
-        localStorage.setItem("pets", JSON.stringify(updatedPets));
-
-        resetForm();
-        setIsOpen(false);
+      let response;
+      if (editingPetId) {
+        response = await api.patch(`/pets/${editingPetId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        showToast("Pet updated successfully");
       } else {
-        showToast(result.message || "Failed to save pet", "error");
+        response = await api.post('/pets', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        showToast("Pet added successfully");
       }
+
+      const updatedData = response.data.data;
+      const responseList = await api.get('/pets/owner');
+      const updatedPets = responseList.data.data;
+
+      setPets(updatedPets);
+      updateCache('myPets', updatedPets);
+      resetForm();
+      setIsOpen(false);
     } catch (error) {
       console.error("Error saving pet:", error);
       showToast("Error saving pet", "error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deletePet = async () => {
+    if (!petToDelete) return;
+    try {
+      await api.delete(`/pets/${petToDelete}`);
+      const updated = pets.filter((pet) => pet.pet_id !== petToDelete);
+      setPets(updated);
+      updateCache('myPets', updated);
+      showToast("Pet deleted successfully");
+    } catch (error) {
+      showToast("Failed to delete pet", "error");
+    } finally {
+      onCloseDelete();
+      setPetToDelete(null);
     }
   };
 
@@ -212,30 +185,6 @@ export default function MyPet() {
     setPet_gender("");
     setPet_image(null);
     setImagePreview("");
-  };
-
-  const deletePet = async () => {
-    if (!petToDelete) return;
-    try {
-      const response = await secureFetch(`/api/pets/${petToDelete}`, { method: 'DELETE' });
-
-      if (response.ok) {
-        const updated = pets.filter((pet) => pet.pet_id !== petToDelete);
-        setPets(updated);
-        updateCache('myPets', updated);
-        localStorage.setItem("pets", JSON.stringify(updated));
-        showToast("Pet deleted successfully");
-      } else {
-        const result = await response.json();
-        showToast(result.message || "Failed to delete pet", "error");
-      }
-    } catch (error) {
-      console.error("Error deleting pet:", error);
-      showToast("Error deleting pet", "error");
-    } finally {
-      onCloseDelete();
-      setPetToDelete(null);
-    }
   };
 
   const filteredPets = pets.filter((pet) =>

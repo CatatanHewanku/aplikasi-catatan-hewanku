@@ -187,7 +187,7 @@ export default function SignUp() {
           </Button>
 
           <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.800" >
-            Already have account? <Link color="Primary.800" onClick={() => navigate("/login")}>Log In</Link>
+            Already have account? <Link color="Primary.800" onClick={() => navigate("/")}>Log In</Link>
           </Text>
 
         </Flex>
