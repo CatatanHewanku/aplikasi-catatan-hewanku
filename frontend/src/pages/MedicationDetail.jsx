@@ -130,9 +130,7 @@ export default function MedicationDetail() {
       formData.append('pet_gender', pet_gender);
       if (pet_image) formData.append('pet_image', pet_image);
 
-      const response = await api.patch(`/pets/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch(`/pets/${id}`, formData);
 
       if (response.data) {
         setPet(response.data.data);
@@ -140,7 +138,8 @@ export default function MedicationDetail() {
         setIsOpen(false);
       }
     } catch (error) {
-      showToast("Failed to update pet", "error");
+      console.error("Timeout/Error:", error);
+      showToast("Failed to update pet. Check your connection or image size.", "error");
     } finally {
       setIsSaving(false);
     }
