@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
+import ProtectedRoute from "./utils/ProtectedRoute.jsx";
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import './App.css'
@@ -29,12 +30,14 @@ function App() {
   if(!isLogin){
     return(
       <Routes>
-        <Route path="*" element={<Login />}/>
+        <Route path="/" element={<Login />}/>
+        <Route path="/signup" element={<SignUp />}/>
         <Route path="/forgot-password-email" element={<ForgotPasswordEmail />}/>
         <Route path="/forgot-password-phone" element={<ForgotPasswordPhone />}/>
         <Route path="/otp-verification" element={<OTPVerification />}/>          
         <Route path="/reset-password" element={<ResetPassword />} />    
-        <Route path="/signup" element={<SignUp />}/>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }
