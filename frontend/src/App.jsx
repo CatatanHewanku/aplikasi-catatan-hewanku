@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./utils/ProtectedRoute.jsx";
 import { useState } from 'react'
