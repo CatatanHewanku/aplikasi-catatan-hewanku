@@ -1,7 +1,7 @@
 import express from "express"
 import { PetController } from "../controllers/PetController.js"
 import { upload } from "../config/multer.js"
-import { verifyToken } from '../middlewares/authMiddleware.js'
+import { verifyToken } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
