@@ -32,12 +32,13 @@ export class PetController {
   static async getPet(req, res) {
     try {
       const { pet_id } = req.params
+      const { owner_id } = req.user
 
       if (!pet_id) {
         return res.status(400).json({ message: "Pet ID is required" })
       }
 
-      const pet = await PetModel.getPetById(pet_id)
+      const pet = await PetModel.getPetById(pet_id, owner_id)
 
       if (!pet) {
         return res.status(404).json({ message: "Pet not found" })
@@ -67,6 +68,7 @@ export class PetController {
   static async updatePet(req, res) {
     try {
       const { pet_id } = req.params
+      const { owner_id } = req.user
       const { pet_name, pet_type, pet_dob, pet_gender, pet_note } = req.body
       const file = req.file
 
@@ -75,7 +77,7 @@ export class PetController {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      const existingPet = await PetModel.getPetById(pet_id)
+      const existingPet = await PetModel.getPetById(pet_id, owner_id)
       if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
       // Define the single variable to hold our URL, defaulting to the old one
@@ -94,7 +96,7 @@ export class PetController {
       }
 
       // Now it passes the correctly updated URL to the database
-      const petData = await PetModel.updatePet(pet_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
+      const petData = await PetModel.updatePet(pet_id, owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
       res.status(200).json({ message: "Pet updated successfully", data: petData })
     } catch (err) {
       res.status(500).json({ message: err.message })
@@ -104,10 +106,11 @@ export class PetController {
   static async deletePet(req, res) {
     try {
       const { pet_id } = req.params
+      const { owner_id } = req.user
 
       if (!pet_id) return res.status(400).json({ message: "Pet ID is required" })
 
-      const existingPet = await PetModel.getPetById(pet_id)
+      const existingPet = await PetModel.getPetById(pet_id, owner_id)
       if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
       // Delete pet image
@@ -128,7 +131,7 @@ export class PetController {
         }
       }
 
-      const result = await PetModel.deletePet(pet_id)
+      const result = await PetModel.deletePet(pet_id, owner_id)
       res.status(200).json({ message: "Pet deleted successfully", data: result })
     } catch (err) {
       res.status(500).json({ message: err.message })
