@@ -52,6 +52,21 @@
 
 body {
   margin: 0;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox versi lama */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Versi standar yang didukung Chrome, Edge, Opera, dan Firefox */
+}
+
+input, textarea {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 
