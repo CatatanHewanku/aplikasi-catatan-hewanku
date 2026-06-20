@@ -19,7 +19,17 @@ export default function VetClinicDetail() {
       position: "top",
       duration: 3000,
       render: () => (
-        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+        <Box 
+          bg={status === "error" ? "red.500" : "Primary.800"} 
+          color="white" 
+          px={6} 
+          py={3} 
+          borderRadius="30px" 
+          textAlign="center" 
+          fontWeight="bold" 
+          boxShadow="xl" 
+          mt="20px"
+        >
           {message}
         </Box>
       ),
@@ -60,6 +70,19 @@ export default function VetClinicDetail() {
     }
   };
 
+  const handleCopy = (text, type) => {
+    if (!text || text === "Not available") return;
+    
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        showToast(`${type} berhasil disalin!`, "success");
+      })
+      .catch((err) => {
+        console.error("Gagal menyalin teks:", err);
+        showToast("Gagal menyalin teks", "error");
+      });
+  };
+
   if (isLoading) {
     return (
       <Flex direction="column" minH="100vh" p="20px" align="center" justify="center">
@@ -82,7 +105,7 @@ export default function VetClinicDetail() {
   return (
     <Flex direction="column" minH="100vh" p="20px" pb="120px">
 
-      {/* HEADER: Standardized centering */}
+      {/* HEADER */}
       <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
         <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate('/vet')}>
           <MdArrowBack size="28px" />
@@ -104,14 +127,22 @@ export default function VetClinicDetail() {
 
       <Stack spacing={6}>
         {/* CLINIC NAME */}
-        <Text fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
+        <Text fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900" userSelect="text">
           {clinic.clinic_name}
         </Text>
 
         <Box bg="Primary.200" p="20px" borderRadius="16px" boxShadow="sm">
           <Stack spacing={5}>
-            {/* ADDRESS */}
-            <Flex align="flex-start" gap={4}>
+            
+            {/* ADDRESS (Ditambahkan fungsi Copy dan userSelect) */}
+            <Flex 
+              align="flex-start" 
+              gap={4} 
+              onClick={() => handleCopy(clinic.clinic_address, "Alamat klinik")}
+              cursor="pointer"
+              _active={{ opacity: 0.5 }} // Efek saat ditekan
+              transition="0.1s"
+            >
               <Box color="Primary.800" mt="2px">
                 <MdLocationOn size={24} />
               </Box>
@@ -119,7 +150,7 @@ export default function VetClinicDetail() {
                 <Text fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
                   Address
                 </Text>
-                <Text color="Primary.800" fontSize="md">
+                <Text color="Primary.800" fontSize="md" userSelect="text">
                   {clinic.clinic_address}
                 </Text>
               </Flex>
@@ -144,8 +175,15 @@ export default function VetClinicDetail() {
 
             <Divider borderColor="Primary.300" />
 
-            {/* PHONE */}
-            <Flex align="center" gap={4}>
+            {/* PHONE (Ditambahkan fungsi Copy dan userSelect) */}
+            <Flex 
+              align="center" 
+              gap={4} 
+              onClick={() => handleCopy(clinic.clinic_phone, "Nomor telepon")}
+              cursor={clinic.clinic_phone ? "pointer" : "default"}
+              _active={clinic.clinic_phone ? { opacity: 0.5 } : {}} // Efek saat ditekan
+              transition="0.1s"
+            >
               <Box color="Primary.800">
                 <MdPhone size={24} />
               </Box>
@@ -153,11 +191,12 @@ export default function VetClinicDetail() {
                 <Text fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
                   Phone
                 </Text>
-                <Text color="Primary.800" fontSize="md">
+                <Text color="Primary.800" fontSize="md" userSelect="text">
                   {clinic.clinic_phone || "Not available"}
                 </Text>
               </Flex>
             </Flex>
+            
           </Stack>
         </Box>
       </Stack>
