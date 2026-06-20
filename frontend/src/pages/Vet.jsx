@@ -1,4 +1,4 @@
-import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Icon, Divider, useToast } from "@chakra-ui/react";
+import { Flex, Text, Box, InputRightElement, Input, InputGroup, Image, Icon, Divider, useToast, Button } from "@chakra-ui/react";
 import { useState, useEffect, useContext, Fragment } from "react";
 import { MdFilterAlt, MdSearch, MdStar, MdStarBorder, MdLocationOn } from "react-icons/md";
 import { CacheContext } from '../utils/CacheContext.jsx';
@@ -11,6 +11,10 @@ export default function Vet() {
   const [search, setSearch] = useState("");
   const [clinics, setClinics] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // === State untuk Pagination ===
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; 
 
   const showToast = (message, status = "error") => {
     toast({
@@ -44,7 +48,12 @@ export default function Vet() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [currentPage]); 
+
+  // Reset Halaman saat Pencarian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   useEffect(() => {
     const cacheKey = `vetClinics_${owner_id}`;
@@ -176,11 +185,24 @@ export default function Vet() {
     clinic.clinic_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // === Logika Pagination ===
+  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
+  const indexOfLastClinic = currentPage * itemsPerPage;
+  const indexOfFirstClinic = indexOfLastClinic - itemsPerPage;
+  const currentClinics = filteredClinics.slice(indexOfFirstClinic, indexOfLastClinic);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
   const navigate = useNavigate();
 
   return (
     <Flex direction="column" minH="100vh" p="20px">
-      {/* FIXED: Increased Header size to 2xl and made it bold */}
       <Text pt="20px" pb="20px" fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
         Vet
       </Text>
@@ -200,11 +222,13 @@ export default function Vet() {
             <Flex align="center" justify="center">
               <Text>Loading...</Text>
             </Flex>
-          ) : (
-            filteredClinics.map((clinic, index) => {
-              const showFavoriteHeader = index === 0 && clinic.isFavorite;
-              const showDividerAndOtherHeader = !clinic.isFavorite && index > 0 && filteredClinics[index - 1].isFavorite;
-              const showAllClinicsHeader = index === 0 && !clinic.isFavorite;
+          ) : currentClinics.length > 0 ? (
+            currentClinics.map((clinic, index) => {
+              const absoluteIndex = indexOfFirstClinic + index;
+              
+              const showFavoriteHeader = absoluteIndex === 0 && clinic.isFavorite;
+              const showDividerAndOtherHeader = !clinic.isFavorite && absoluteIndex > 0 && filteredClinics[absoluteIndex - 1].isFavorite;
+              const showAllClinicsHeader = absoluteIndex === 0 && !clinic.isFavorite;
 
               return (
                 <Fragment key={clinic.clinic_id}>
@@ -254,14 +278,12 @@ export default function Vet() {
                         }}
                       />
                       <Flex direction="column" gap={0} flex="1" overflow="hidden">
-                        {/* FIXED: Reduced to lg, kept bold to establish clear hierarchy */}
                         <Text fontFamily="heading" fontSize="lg" fontWeight="bold" color="Primary.900" isTruncated>
                           {clinic.clinic_name}
                         </Text>
                         {clinic.distance_km && (
                           <Flex align="center" gap={1} mt={1}>
                             <MdLocationOn size={16} color="var(--chakra-colors-Primary-900)" />
-                            {/* FIXED: Reduced to sm */}
                             <Text fontSize="sm" color="Primary.900" isTruncated>
                               {clinic.distance_km} km away
                             </Text>
@@ -285,8 +307,80 @@ export default function Vet() {
                 </Fragment>
               );
             })
+          ) : (
+            <Flex align="center" justify="center" mt={4}>
+              <Text color="Primary.900" fontWeight="bold">Tidak ada klinik yang ditemukan.</Text>
+            </Flex>
           )}
         </Flex>
+
+        {/* === Antarmuka Pagination Diperbarui === */}
+        {totalPages > 1 && (
+          <Flex justify="space-between" align="center" mt={6} pb={4}>
+            
+            {/* Kelompok Tombol Kiri */}
+            <Flex gap={2}>
+              <Button
+                onClick={() => setCurrentPage(1)}
+                isDisabled={currentPage === 1}
+                bg="Primary.800"
+                color="white"
+                borderRadius="20px"
+                _hover={{ bg: "Primary.900" }}
+                _disabled={{ opacity: 0.5, cursor: "not-allowed", bg: "gray.400" }}
+                size="sm"
+              >
+                &lt;&lt;
+              </Button>
+              <Button
+                onClick={handlePrevPage}
+                isDisabled={currentPage === 1}
+                bg="Primary.800"
+                color="white"
+                borderRadius="20px"
+                _hover={{ bg: "Primary.900" }}
+                _disabled={{ opacity: 0.5, cursor: "not-allowed", bg: "gray.400" }}
+                size="sm"
+              >
+                Prev
+              </Button>
+            </Flex>
+            
+            {/* Teks Informasi Halaman */}
+            <Text fontFamily="heading" fontWeight="bold" color="Primary.900" fontSize="sm" textAlign="center">
+              Page {currentPage} of {totalPages}
+            </Text>
+            
+            {/* Kelompok Tombol Kanan */}
+            <Flex gap={2}>
+              <Button
+                onClick={handleNextPage}
+                isDisabled={currentPage === totalPages}
+                bg="Primary.800"
+                color="white"
+                borderRadius="20px"
+                _hover={{ bg: "Primary.900" }}
+                _disabled={{ opacity: 0.5, cursor: "not-allowed", bg: "gray.400" }}
+                size="sm"
+              >
+                Next
+              </Button>
+              <Button
+                onClick={() => setCurrentPage(totalPages)}
+                isDisabled={currentPage === totalPages}
+                bg="Primary.800"
+                color="white"
+                borderRadius="20px"
+                _hover={{ bg: "Primary.900" }}
+                _disabled={{ opacity: 0.5, cursor: "not-allowed", bg: "gray.400" }}
+                size="sm"
+              >
+                &gt;&gt;
+              </Button>
+            </Flex>
+
+          </Flex>
+        )}
       </Flex>
     </Flex>
   );

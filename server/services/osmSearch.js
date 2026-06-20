@@ -31,7 +31,7 @@ export const searchVetClinicsOSM = async (latitude, longitude, radiusKm = 5) => 
           'Content-Type': 'application/osm3s',
           'User-Agent': 'CatatanHewanku/1.0'
         },
-        timeout: 15000
+        timeout: 90000
       }
     )
 

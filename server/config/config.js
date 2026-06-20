@@ -14,12 +14,12 @@ export const SqlConfig = {
     encrypt: true,
     trustServerCertificate: true,
     enableKeepAlive: true,
-    connectionTimeout: 30000, 
-    requestTimeout: 60000,
+    connectionTimeout: 90000, 
+    requestTimeout: 90000,
   },
   pool: {
     max: 10,
     min: 1,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 90000,
   },
 }
