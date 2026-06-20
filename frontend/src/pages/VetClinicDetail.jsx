@@ -127,9 +127,9 @@ export default function VetClinicDetail() {
 
       <Stack spacing={6}>
         {/* CLINIC NAME */}
-        <Text fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900" userSelect="text">
+        <Flex fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
           {clinic.clinic_name}
-        </Text>
+        </Flex>
 
         <Box bg="Primary.200" p="20px" borderRadius="16px" boxShadow="sm">
           <Stack spacing={5}>
@@ -147,12 +147,12 @@ export default function VetClinicDetail() {
                 <MdLocationOn size={24} />
               </Box>
               <Flex direction="column">
-                <Text fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
+                <Flex fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
                   Address
-                </Text>
-                <Text color="Primary.800" fontSize="md" userSelect="text">
+                </Flex>
+                <Flex color="Primary.800" fontSize="md">
                   {clinic.clinic_address}
-                </Text>
+                </Flex>
               </Flex>
             </Flex>
 
@@ -164,12 +164,12 @@ export default function VetClinicDetail() {
                 <Icon as={MdMap} size={24} />
               </Box>
               <Flex direction="column">
-                <Text fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
+                <Flex fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
                   Distance
-                </Text>
-                <Text color="Primary.800" fontSize="md">
+                </Flex>
+                <Flex color="Primary.800" fontSize="md">
                   {distance} km away
-                </Text>
+                </Flex>
               </Flex>
             </Flex>
 
@@ -188,12 +188,12 @@ export default function VetClinicDetail() {
                 <MdPhone size={24} />
               </Box>
               <Flex direction="column">
-                <Text fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
+                <Flex fontFamily="heading" fontWeight="bold" color="Primary.900" mb="2px">
                   Phone
-                </Text>
-                <Text color="Primary.800" fontSize="md" userSelect="text">
+                </Flex>
+                <Flex color="Primary.800" fontSize="md">
                   {clinic.clinic_phone || "Not available"}
-                </Text>
+                </Flex>
               </Flex>
             </Flex>
             
