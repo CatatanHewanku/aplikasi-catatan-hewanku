@@ -37,6 +37,9 @@ export default function SignUp() {
   const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // === STATE BARU UNTUK TEKS LOADING DINAMIS ===
+  const [loadingText, setLoadingText] = useState("Signing Up...");
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -93,17 +96,49 @@ export default function SignUp() {
     setPasswordError("");
     setNameError("");
     setIsLoading(true);
+    setLoadingText("Signing Up..."); // Reset loading text
 
-    try {
-      console.log("Calling authService.signup...");
-      await authService.signup(firstName, email, phone, password);
-      console.log("Backend signup success");
-      localStorage.setItem("isLogin", "true");
-      window.location.href = "/";
-    } catch (backendError) {
-      console.log("Backend signup failed:", backendError);
-      setPasswordError(backendError?.message || "Signup failed. Try with a new email.");
-      setIsLoading(false);
+    // === MEKANISME SILENT RETRY ===
+    const maxRetries = 3; // Mencoba maksimal 3 kali (Total waktu aman ~45 detik)
+    const retryDelayMs = 15000; // Jeda antar percobaan 15 detik
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Calling authService.signup... (Attempt ${attempt})`);
+        await authService.signup(firstName, email, phone, password);
+        
+        console.log("Backend signup success");
+        localStorage.setItem("isLogin", "true");
+        window.location.href = "/";
+        return; // Berhasil, keluar dari fungsi dan loop
+
+      } catch (backendError) {
+        console.log(`Backend signup failed on attempt ${attempt}:`, backendError);
+
+        // Jika ini adalah error validasi standar (contoh: Email sudah terdaftar/status 400), 
+        // kita tidak perlu melakukan retry. Langsung hentikan.
+        // Asumsi: backendError memiliki property status HTTP (tergantung dari response service Anda)
+        const isClientError = backendError?.response?.status >= 400 && backendError?.response?.status < 500;
+        
+        if (isClientError || attempt === maxRetries) {
+          // Gagal total atau error validasi dari server
+          setPasswordError(backendError?.message || "Signup failed. Try with a new email.");
+          setIsLoading(false);
+          setLoadingText("Sign Up");
+          return;
+        }
+
+        // Jika masuk ke sini, asumsinya error karena timeout/database mati (Cold Start).
+        // Update pesan UI agar pengguna bersabar.
+        if (attempt === 1) {
+          setLoadingText("Waking up system...");
+        } else if (attempt === 2) {
+          setLoadingText("Almost ready...");
+        }
+
+        // Tunggu beberapa detik sebelum melakukan retry berikutnya
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      }
     }
   };
 
@@ -183,7 +218,8 @@ export default function SignUp() {
             onClick={handleSignUp}
             isDisabled={isLoading}
           >
-            {isLoading ? "Signing Up..." : "Sign Up"}
+            {/* === PENGGUNAAN LOADING TEXT DINAMIS === */}
+            {isLoading ? loadingText : "Sign Up"}
           </Button>
 
           <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.800" >

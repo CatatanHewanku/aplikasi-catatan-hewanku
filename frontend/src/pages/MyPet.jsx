@@ -12,6 +12,12 @@ export default function MyPet() {
   const toast = useToast();
   const { getCachedData, updateCache } = useContext(CacheContext);
 
+  // === PERBAIKAN 1: Mengambil owner_id dari localStorage ===
+  const [owner_id] = useState(() => {
+    const ownerData = JSON.parse(localStorage.getItem("owner"));
+    return ownerData?.owner_id || null;
+  });
+
   const [search, setSearch] = useState("");
   const [pets, setPets] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
@@ -120,6 +126,12 @@ export default function MyPet() {
       return;
     }
 
+    // Pastikan owner_id ada sebelum menyimpan
+    if (!owner_id) {
+      showToast("Owner ID not found. Please log in again.", "error");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const formData = new FormData();
@@ -127,6 +139,9 @@ export default function MyPet() {
       formData.append('pet_dob', pet_dob);
       formData.append('pet_type', pet_type);
       formData.append('pet_gender', pet_gender);
+      
+      // === PERBAIKAN 2: Menambahkan owner_id ke dalam payload request ===
+      formData.append('owner_id', owner_id);
 
       if (pet_image && pet_image instanceof File) {
         formData.append('pet_image', pet_image);
@@ -145,7 +160,7 @@ export default function MyPet() {
         showToast("Pet added successfully");
       }
 
-      const updatedData = response.data.data;
+      // Ambil ulang data agar tampilan selalu fresh
       const responseList = await api.get('/pets/owner');
       const updatedPets = responseList.data.data;
 

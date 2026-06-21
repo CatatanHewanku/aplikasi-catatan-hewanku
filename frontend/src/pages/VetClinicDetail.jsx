@@ -105,7 +105,6 @@ export default function VetClinicDetail() {
   return (
     <Flex direction="column" minH="100vh" p="20px" pb="120px">
 
-      {/* HEADER */}
       <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
         <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate('/vet')}>
           <MdArrowBack size="28px" />
@@ -113,7 +112,6 @@ export default function VetClinicDetail() {
         <Text fontSize="2xl" fontFamily="heading" fontWeight="bold" color="Primary.900" textAlign="center">Clinic Details</Text>
       </Flex>
 
-      {/* CLINIC IMAGE */}
       <Image
         src={clinic.clinic_photo_cloudinary_url || DogHouse}
         w="100%"
@@ -126,7 +124,6 @@ export default function VetClinicDetail() {
       />
 
       <Stack spacing={6}>
-        {/* CLINIC NAME */}
         <Flex fontSize="xl" fontFamily="heading" fontWeight="bold" color="Primary.900">
           {clinic.clinic_name}
         </Flex>
@@ -134,13 +131,12 @@ export default function VetClinicDetail() {
         <Box bg="Primary.200" p="20px" borderRadius="16px" boxShadow="sm">
           <Stack spacing={5}>
             
-            {/* ADDRESS (Ditambahkan fungsi Copy dan userSelect) */}
             <Flex 
               align="flex-start" 
               gap={4} 
               onClick={() => handleCopy(clinic.clinic_address, "Alamat klinik")}
               cursor="pointer"
-              _active={{ opacity: 0.5 }} // Efek saat ditekan
+              _active={{ opacity: 0.5 }}
               transition="0.1s"
             >
               <Box color="Primary.800" mt="2px">
@@ -158,7 +154,6 @@ export default function VetClinicDetail() {
 
             <Divider borderColor="Primary.300" />
 
-            {/* DISTANCE */}
             <Flex align="center" gap={4}>
               <Box color="Primary.800">
                 <Icon as={MdMap} size={24} />
@@ -175,13 +170,12 @@ export default function VetClinicDetail() {
 
             <Divider borderColor="Primary.300" />
 
-            {/* PHONE (Ditambahkan fungsi Copy dan userSelect) */}
             <Flex 
               align="center" 
               gap={4} 
               onClick={() => handleCopy(clinic.clinic_phone, "Nomor telepon")}
               cursor={clinic.clinic_phone ? "pointer" : "default"}
-              _active={clinic.clinic_phone ? { opacity: 0.5 } : {}} // Efek saat ditekan
+              _active={clinic.clinic_phone ? { opacity: 0.5 } : {}}
               transition="0.1s"
             >
               <Box color="Primary.800">
@@ -201,7 +195,6 @@ export default function VetClinicDetail() {
         </Box>
       </Stack>
 
-      {/* MAP BUTTON */}
       <Button
         mt="40px"
         w="100%"
