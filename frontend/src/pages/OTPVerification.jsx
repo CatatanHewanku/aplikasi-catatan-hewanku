@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-// import Logo from "../images/Logo.jpeg";
 import Logo from "../images/Logo_fix.png";
 
 export default function OtpVerification() {
@@ -31,10 +30,8 @@ export default function OtpVerification() {
     setError("");
 
     try {
-      // Try backend first
       const savedEmail = localStorage.getItem("resetEmail");
       await authService.verifyCode(savedEmail, otp);
-      // If successful, go to reset password page
       navigate("/reset-password");
     } catch (error) {
       console.log("Backend verify code failed:", error);
@@ -55,14 +52,14 @@ export default function OtpVerification() {
           Catatan Hewanku
         </Text>
 
-        <Flex justify="flex-start" mb="20px">
-          <Box color="Primary.800" cursor="pointer" onClick={() => navigate(-1)} >
+        <Flex position="relative" w="100%" justify="center" align="center" mb="24px">
+          <Box position="absolute" left="0" color="Primary.800" cursor="pointer" onClick={() => navigate("/")}>
             <MdArrowBack size="30px" />
           </Box>
+          <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="xl">
+            OTP Verification
+          </Text>
         </Flex>
-        <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="xl" mb="20px">
-          OTP Verification
-        </Text>
 
         <Text textAlign="center" color="Primary.700" fontSize="sm" mb="32px" >
           Enter the 6 digit OTP sent

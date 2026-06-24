@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-// import Logo from "../images/Logo.jpeg";
 import Logo from "../images/Logo_fix.png";
 
 const validatePassword = (password) => {
@@ -34,7 +33,6 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // SMART DETECTION: Are we changing a known password, or resetting a forgotten one?
   const loggedInOwner = JSON.parse(localStorage.getItem("owner"));
   const savedCode = localStorage.getItem("resetCode");
   const isChangeMode = !!loggedInOwner && !savedCode;
@@ -94,7 +92,6 @@ export default function ResetPassword() {
           throw new Error(result.message || "Failed to change password.");
         }
       } else {
-        // --- 2. FORGOT PASSWORD FLOW (Email OTP) ---
         const savedEmail = localStorage.getItem("resetEmail");
 
         if (!savedEmail || !savedCode) {
@@ -103,7 +100,6 @@ export default function ResetPassword() {
 
         await authService.resetPassword(savedEmail, savedCode, password);
 
-        // Clean up memory
         localStorage.removeItem("resetEmail");
         localStorage.removeItem("resetCode");
 
@@ -121,7 +117,6 @@ export default function ResetPassword() {
     <Flex minH="100vh" bg="Primary.100" justify="center" align="center" px="20px" py="70px">
       <Box position="relative" bg="white" w="100%" maxW="380px" borderRadius="30px" px="28px" pt="75px" pb="40px" boxShadow="lg">
 
-        {/* Floating Logo */}
         <Flex position="absolute" top="-60px" left="50%" transform="translateX(-50%)" justify="center" align="center" w="100%">
           <Image src={Logo} w="120px" objectFit="contain" filter="drop-shadow(0px 4px 6px rgba(0,0,0,0.1))" borderRadius="full" />
         </Flex>
@@ -130,7 +125,6 @@ export default function ResetPassword() {
           Catatan Hewanku
         </Text>
 
-        {/* Dynamic Header Row */}
         <Flex justify="space-between" align="center" mb="30px">
           <Box color="Primary.800" cursor="pointer" onClick={() => navigate(-1)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
             <MdArrowBack size="28px" />
@@ -138,7 +132,7 @@ export default function ResetPassword() {
           <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="xl">
             {isChangeMode ? "Change Password" : "Create New Password"}
           </Text>
-          <Box w="28px" /> {/* Empty box for perfect flex centering */}
+          <Box w="28px" />
         </Flex>
 
         <Flex direction="column" gap={5}>
@@ -180,7 +174,6 @@ export default function ResetPassword() {
           </Box>
         </Flex>
 
-        {/* Polished Error Box */}
         {error && (
           <Box bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md" p={3} mt={5}>
             <Text color="red.500" fontSize="sm" fontWeight="medium" whiteSpace="pre-wrap" textAlign="center">

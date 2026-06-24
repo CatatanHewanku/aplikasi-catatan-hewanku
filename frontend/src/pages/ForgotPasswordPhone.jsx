@@ -44,21 +44,20 @@ export default function ForgotPasswordPhone() {
           <Image src={Logo} w="150px" objectFit="contain" />
         </Flex>
 
-        <Text textAlign="center" color="Primary.900" fontWeight="bold" fontSize="xl" fontFamily="title" mb="50px">
+        <Text textAlign="center" color="Primary.900" fontWeight="bold" fontSize="xl" fontFamily="title" mb="24px">
           Catatan Hewanku
         </Text>
 
-        <Flex justify="flex-start" mb="20px">
-          <Box color="Primary.800" cursor="pointer" onClick={() => navigate("/")}>
+        <Flex position="relative" w="100%" justify="center" align="center" mb="24px">
+          <Box position="absolute" left="0" color="Primary.800" cursor="pointer" onClick={() => navigate("/")}>
             <MdArrowBack size="30px" />
           </Box>
+          <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="xl">
+            Reset Password
+          </Text>
         </Flex>
 
-        <Text textAlign="center" color="Primary.800" fontWeight="bold" fontFamily="heading" fontSize="xl" mb="20px">
-          Reset Password
-        </Text>
-
-        <Text textAlign="center" color="Primary.700" fontSize="sm" mb="32px" whiteSpace="pre-wrap">
+        <Text textAlign="center" color="Primary.700" fontSize="sm" mb="24px" whiteSpace="pre-wrap">
           Enter your registered phone number.
           {"\n"}
           Reset instructions will be sent
@@ -105,7 +104,7 @@ export default function ForgotPasswordPhone() {
           </Button>
         </Flex>
 
-        <Text textAlign="center" mt="24px" color="Primary.700" cursor="pointer" onClick={() => navigate("/forgot-password-email")}>
+        <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.700" cursor="pointer" onClick={() => navigate("/forgot-password-email")}>
           Use email instead
         </Text>
       </Box>

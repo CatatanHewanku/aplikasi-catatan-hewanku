@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
-// import Logo from "../images/Logo.jpeg";
 import Logo from "../images/Logo_fix.png";
 
 const validatePassword = (password) => {
@@ -38,7 +37,6 @@ export default function SignUp() {
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // === STATE BARU UNTUK TEKS LOADING DINAMIS ===
   const [loadingText, setLoadingText] = useState("Signing Up...");
 
   useEffect(() => {
@@ -59,7 +57,6 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
-    // Validation
     if (!firstName.trim()) {
       setNameError("First name is required");
       return;
@@ -81,7 +78,6 @@ export default function SignUp() {
       return;
     }
 
-    // Password strength validation
     const passwordErrors = validatePassword(password);
     if (passwordErrors.length > 0) {
       setPasswordError(passwordErrors.join("\n"));
@@ -96,11 +92,10 @@ export default function SignUp() {
     setPasswordError("");
     setNameError("");
     setIsLoading(true);
-    setLoadingText("Signing Up..."); // Reset loading text
+    setLoadingText("Signing Up...");
 
-    // === MEKANISME SILENT RETRY ===
-    const maxRetries = 3; // Mencoba maksimal 3 kali (Total waktu aman ~45 detik)
-    const retryDelayMs = 15000; // Jeda antar percobaan 15 detik
+    const maxRetries = 3;
+    const retryDelayMs = 15000;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -110,33 +105,26 @@ export default function SignUp() {
         console.log("Backend signup success");
         localStorage.setItem("isLogin", "true");
         window.location.href = "/";
-        return; // Berhasil, keluar dari fungsi dan loop
+        return;
 
       } catch (backendError) {
         console.log(`Backend signup failed on attempt ${attempt}:`, backendError);
 
-        // Jika ini adalah error validasi standar (contoh: Email sudah terdaftar/status 400), 
-        // kita tidak perlu melakukan retry. Langsung hentikan.
-        // Asumsi: backendError memiliki property status HTTP (tergantung dari response service Anda)
         const isClientError = backendError?.response?.status >= 400 && backendError?.response?.status < 500;
         
         if (isClientError || attempt === maxRetries) {
-          // Gagal total atau error validasi dari server
           setPasswordError(backendError?.message || "Signup failed. Try with a new email.");
           setIsLoading(false);
           setLoadingText("Sign Up");
           return;
         }
 
-        // Jika masuk ke sini, asumsinya error karena timeout/database mati (Cold Start).
-        // Update pesan UI agar pengguna bersabar.
         if (attempt === 1) {
           setLoadingText("Waking up system...");
         } else if (attempt === 2) {
           setLoadingText("Almost ready...");
         }
 
-        // Tunggu beberapa detik sebelum melakukan retry berikutnya
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));
       }
     }
@@ -163,11 +151,9 @@ export default function SignUp() {
             </InputLeftElement>
             <Input placeholder="First Name" value={firstName} onChange={handleFirstName} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
           </InputGroup>
-          {nameError && (
-            <Text color="red.400" fontSize="sm" ml="8px">
-              {nameError}
-            </Text>
-          )}
+          
+          {/* BAGIAN NAME ERROR DIHAPUS DARI SINI */}
+
           <InputGroup>
             <InputLeftElement pointerEvents="none" color="Primary.800">
               <MdEmail size="20px" />
@@ -196,11 +182,14 @@ export default function SignUp() {
               {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
             </InputRightElement>
           </InputGroup>
-          {passwordError && (
-            <Text color="red.400" fontSize="sm" ml="8px" whiteSpace="pre-wrap">
-              {passwordError}
+          
+          {/* === BLOK ERROR GABUNGAN === */}
+          {(nameError || passwordError) && (
+            <Text color="red.400" fontSize="sm" whiteSpace="pre-wrap" mt="-2">
+              {[nameError, passwordError].filter(Boolean).join("\n")}
             </Text>
           )}
+
         </Flex>
         <Flex align="center" direction="column">
           <Button
@@ -218,7 +207,6 @@ export default function SignUp() {
             onClick={handleSignUp}
             isDisabled={isLoading}
           >
-            {/* === PENGGUNAAN LOADING TEXT DINAMIS === */}
             {isLoading ? loadingText : "Sign Up"}
           </Button>
 

@@ -265,7 +265,7 @@ export default function Home() {
               </Text>
             ) : !closestReminder ? (
               <Text color="Primary.900" fontFamily="heading" fontSize="md" fontWeight="regular">
-                No recent activity
+                No upcoming activity
               </Text>
             ) : (
               <>
