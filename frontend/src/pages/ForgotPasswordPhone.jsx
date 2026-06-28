@@ -3,13 +3,16 @@ import { MdPhone, MdArrowBack } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
-// import Logo from "../images/Logo.jpeg";
+import { removeEmojis } from "../utils/textUtils";
+import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 import Logo from "../images/Logo_fix.png";
 
 export default function ForgotPasswordPhone() {
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
+
+  const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -20,21 +23,36 @@ export default function ForgotPasswordPhone() {
       setError("Phone number is required");
       return;
     }
-    if (phone.length < 10) {
-      setError("Valid phone number is required");
+    if (phone.length < 11 || phone.length > 12) {
+      setError("Invalid phone number format");
       return;
     }
 
     setError("");
 
-    try {
-      await authService.forgotPassword(phone);
-      localStorage.setItem("resetEmail", phone);
-      navigate("/otp-verification");
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      setError(error.message || "Failed to send OTP. Please try again.");
-    }
+    await executeWithRetry(
+      () => authService.forgotPassword(phone),
+      {
+        defaultLoadingText: "Sending...",
+        
+        onSuccess: () => {
+          localStorage.setItem("resetEmail", phone);
+          navigate("/otp-verification");
+        },
+
+        onError: (backendError, status) => {
+          const errorMessage = backendError?.response?.data?.message || backendError?.message || "Failed to send OTP.";
+          const isNotFoundError = status === 404 || status === 400 || errorMessage.toLowerCase().includes("not found");
+
+          if (isNotFoundError) {
+            localStorage.setItem("resetEmail", phone);
+            navigate("/otp-verification");
+          } else {
+            setError(errorMessage);
+          }
+        }
+      }
+    );
   };
 
   return (
@@ -99,8 +117,9 @@ export default function ForgotPasswordPhone() {
             fontSize="xl"
             _hover={{ opacity: 0.9 }}
             onClick={handleSendOtp}
+            isDisabled={isLoading}
           >
-            Send OTP
+            {isLoading ? loadingText : "Send OTP"}
           </Button>
         </Flex>
 

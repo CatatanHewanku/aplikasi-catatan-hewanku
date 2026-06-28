@@ -4,12 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
+import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 import Logo from "../images/Logo_fix.png";
 
 export default function ForgotPasswordEmail() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+
+  const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -20,21 +23,37 @@ export default function ForgotPasswordEmail() {
       setError("Email is required");
       return;
     }
-    if (!email.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       setError("Invalid email format");
       return;
     }
 
     setError("");
 
-    try {
-      await authService.forgotPassword(email);
-      localStorage.setItem("resetEmail", email);
-      navigate("/otp-verification");
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      setError(error.message || "Failed to send OTP. Please try again.");
-    }
+    await executeWithRetry(
+      () => authService.forgotPassword(email),
+      {
+        defaultLoadingText: "Sending...",
+        
+        onSuccess: () => {
+          localStorage.setItem("resetEmail", email);
+          navigate("/otp-verification");
+        },
+
+        onError: (backendError, status) => {
+          const errorMessage = backendError?.response?.data?.message || backendError?.message || "Failed to send OTP.";
+          const isNotFoundError = status === 404 || status === 400 || errorMessage.toLowerCase().includes("not found");
+
+          if (isNotFoundError) {
+            localStorage.setItem("resetEmail", email);
+            navigate("/otp-verification");
+          } else {
+            setError(errorMessage);
+          }
+        }
+      }
+    );
   };
 
   return (
@@ -99,8 +118,9 @@ export default function ForgotPasswordEmail() {
             fontSize="xl"
             _hover={{ opacity: 0.9 }}
             onClick={handleSendOtp}
+            isDisabled={isLoading}
           >
-            Send OTP
+            {isLoading ? loadingText : "Send OTP"}
           </Button>
         </Flex>
 

@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService.js";
 import { removeEmojis } from "../utils/textUtils.js";
-// import Logo from "../images/Logo.jpeg";
 import Logo from "../images/Logo_fix.png";
+import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,30 +13,58 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [showPassword, setShowPassword] = useState(false); // STATE FOR EYE ICON
+  const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   const handleLogin = async () => {
-    if (!identifier.trim()) { setError("Email or phone is required"); return; }
-    if (!password) { setError("Password is required"); return; }
-    setError("");
-
-    const isPhone = /^\d+$/.test(identifier);
-    if (isPhone && (identifier.length < 11 || identifier.length > 12)) {
-      setError("Invalid phone number.");
+    if (!identifier.trim()) {
+      setError("Email or phone is required");
       return;
     }
 
-    try {
-      await authService.login(identifier, password);
-      window.location.href = "/";
-    } catch (backendError) {
-      setError("Invalid email or password");
+    const isPhone = /^\d+$/.test(identifier);
+    if (isPhone) {
+      if (identifier.length < 11 || identifier.length > 12) {
+        setError("Invalid phone number.");
+        return;
+      }
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier)) {
+        setError("Invalid email format.");
+        return;
+      }
     }
+
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    setError("");
+
+    await executeWithRetry(
+      () => authService.login(identifier, password),
+      {
+        defaultLoadingText: "Logging In...",
+        
+        onSuccess: () => {
+          console.log("Backend login success");
+          window.location.href = "/";
+        },
+        
+        onError: (backendError) => {
+          console.log("Backend login failed:", backendError);
+          const errorMessage = backendError?.response?.data?.message || backendError?.message || "Invalid email or password";
+          setError(errorMessage);
+        }
+      }
+    );
   };
 
   return (
@@ -61,23 +89,34 @@ export default function Login() {
         <InputGroup>
           <InputLeftElement pointerEvents="none" color="Primary.800"><MdLock size="20px" /></InputLeftElement>
 
-          {/* DYNAMIC PASSWORD FIELD */}
           <Input type={showPassword ? "text" : "password"} fontSize="md" fontFamily="body" fontWeight="regular" placeholder="Password" value={password} onChange={(e) => setPassword(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px" borderColor={error ? "red.300" : "Primary.800"} boxShadow="md" _focus={{ borderColor: error ? "red.300" : "Primary.800", boxShadow: "md" }} />
 
-          {/* THE EYE ICON */}
           <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
             {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
           </InputRightElement>
         </InputGroup>
 
         {error && <Text color="red.400" fontSize="xs" mt="6px" ml="8px">{error}</Text>}
+        
         <Flex>
           <Text mt="6px" ml="8px" fontSize="xs" color="Primary.700" cursor="pointer" onClick={() => navigate("/forgot-password-email")}>Forgot Password?</Text>
         </Flex>
 
         <Flex align="center" direction="column">
-          <Button mt="20px" w="80%" h="40px" bg="Primary.800" color="Neutral.100" borderRadius="30px" fontWeight="medium" boxShadow="md" _hover={{ opacity: 0.9 }} onClick={handleLogin}>
-            <Text fontFamily="body" fontSize="xl">Log In</Text>
+          <Button
+            mt="20px"
+            w="80%"
+            h="40px"
+            bg="Primary.800"
+            color="Neutral.100"
+            borderRadius="30px"
+            fontWeight="medium"
+            boxShadow="md"
+            _hover={{ opacity: 0.9 }}
+            onClick={handleLogin}
+            isDisabled={isLoading} 
+          >
+            <Text fontFamily="body" fontSize="xl">{isLoading ? loadingText : "Log In"}</Text>
           </Button>
           <Text fontSize="sm" textAlign="center" mt="10px" color="Primary.800">Don't have an account? <Link color="Primary.800" onClick={() => navigate("/signup")}>Sign Up</Link></Text>
         </Flex>

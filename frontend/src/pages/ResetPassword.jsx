@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import { removeEmojis } from "../utils/textUtils";
+import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 import Logo from "../images/Logo_fix.png";
 
 const validatePassword = (password) => {
   const errors = [];
-
   if (password.length < 8) {
     errors.push("Password must be at least 8 characters");
   }
@@ -18,7 +18,6 @@ const validatePassword = (password) => {
   if (!/[a-z]/.test(password)) {
     errors.push("Password must contain at least one lowercase letter");
   }
-
   return errors;
 };
 
@@ -29,9 +28,10 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   const loggedInOwner = JSON.parse(localStorage.getItem("owner"));
   const savedCode = localStorage.getItem("resetCode");
@@ -39,7 +39,11 @@ export default function ResetPassword() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+
+    if (!loggedInOwner && !savedCode) {
+      navigate("/forgot-password-email");
+    }
+  }, [navigate, loggedInOwner, savedCode]);
 
   const showToast = (message, status = "success") => {
     toast({
@@ -54,63 +58,57 @@ export default function ResetPassword() {
   };
 
   const handleResetPassword = async () => {
-    if (!password) {
-      setError("Password is required.");
-      return;
-    }
-
+    if (!password) { setError("Password is required."); return; }
     const passwordErrors = validatePassword(password);
     if (passwordErrors.length > 0) {
       setError(passwordErrors.join("\n"));
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
     setError("");
-    setIsLoading(true);
 
-    try {
-      if (isChangeMode) {
-        const formData = new FormData();
-        formData.append("password", password);
+    await executeWithRetry(
+      async () => {
+        if (isChangeMode) {
+          const formData = new FormData();
+          formData.append("password", password);
 
-        const response = await fetch(`/api/owners/${loggedInOwner.owner_id}`, {
-          method: "PATCH",
-          body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          showToast("Password changed successfully!", "success"); // TOAST INSTALLED
-          navigate(-1);
+          const response = await fetch(`/api/owners/${loggedInOwner.owner_id}`, {
+            method: "PATCH",
+            body: formData
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            const err = new Error(result.message || "Failed to change password.");
+            err.status = response.status;
+            throw err;
+          }
+          return result;
         } else {
-          throw new Error(result.message || "Failed to change password.");
+          const savedEmail = localStorage.getItem("resetEmail");
+          if (!savedEmail || !savedCode) {
+            throw new Error("Missing reset credentials. Please restart the password reset process.");
+          }
+          return authService.resetPassword(savedEmail, savedCode, password);
         }
-      } else {
-        const savedEmail = localStorage.getItem("resetEmail");
-
-        if (!savedEmail || !savedCode) {
-          throw new Error("Missing reset credentials. Please restart the password reset process.");
+      },
+      {
+        defaultLoadingText: "Saving...",
+        onSuccess: () => {
+          localStorage.removeItem("resetEmail");
+          localStorage.removeItem("resetCode");
+          showToast(isChangeMode ? "Password changed successfully!" : "Password updated successfully!", "success");
+          navigate(isChangeMode ? -1 : "/");
+        },
+        onError: (backendError) => {
+          setError(backendError?.response?.data?.message || backendError?.message || "Failed to update password. Please try again.");
         }
-
-        await authService.resetPassword(savedEmail, savedCode, password);
-
-        localStorage.removeItem("resetEmail");
-        localStorage.removeItem("resetCode");
-
-        showToast("Password reset successfully!", "success");
-        navigate("/");
       }
-    } catch (error) {
-      setError(error?.message || "Failed to update password. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   return (
@@ -144,16 +142,7 @@ export default function ResetPassword() {
               <InputLeftElement pointerEvents="none" color="Primary.800">
                 <MdLock size="20px" />
               </InputLeftElement>
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter new password"
-                value={password}
-                onChange={(e) => setPassword(removeEmojis(e.target.value))}
-                bg="white"
-                borderRadius="30px"
-                border="1px solid"
-                borderColor="Primary.300"
-              />
+              <Input type={showPassword ? "text" : "password"} placeholder="Enter new password" value={password} onChange={(e) => setPassword(removeEmojis(e.target.value))} bg="white" borderRadius="30px" border="1px solid" borderColor="Primary.300" />
               <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
               </InputRightElement>
@@ -197,7 +186,7 @@ export default function ResetPassword() {
             onClick={handleResetPassword}
             isDisabled={isLoading}
           >
-            {isLoading ? "Saving..." : "Save Password"}
+            {isLoading ? loadingText : "Save Password"}
           </Button>
         </Flex>
       </Box>
