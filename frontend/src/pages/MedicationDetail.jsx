@@ -128,14 +128,21 @@ export default function MedicationDetail() {
       formData.append('pet_dob', pet_dob);
       formData.append('pet_type', pet_type);
       formData.append('pet_gender', pet_gender);
-      if (pet_image) formData.append('pet_image', pet_image);
 
-      const response = await api.patch(`/pets/${id}`, formData);
+      if (pet_image && pet_image instanceof File) {
+        formData.append('pet_image', pet_image);
+      }
+
+      const response = await api.patch(`/pets/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
       if (response.data) {
         setPet(response.data.data);
         showToast("Pet profile updated!");
         setIsOpen(false);
+
+        updateCache('myPets', null);
       }
     } catch (error) {
       console.error("Timeout/Error:", error);
@@ -147,7 +154,6 @@ export default function MedicationDetail() {
 
   const handleSaveNotes = async () => {
     try {
-      // Gunakan api.patch
       const response = await api.patch(`/pets/${id}`, {
         pet_name: pet.pet_name,
         pet_dob: pet.pet_dob,
@@ -257,7 +263,6 @@ export default function MedicationDetail() {
         </Box>
       </Box>
 
-      {/* NOTES MODAL */}
       <Modal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent bg="Primary.200" borderRadius="16px" mx="20px" boxShadow="xl">
@@ -274,7 +279,6 @@ export default function MedicationDetail() {
         </ModalContent>
       </Modal>
 
-      {/* EDIT PET MODAL */}
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="16px" p="10px" mx="20px">
