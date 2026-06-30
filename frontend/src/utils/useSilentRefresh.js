@@ -22,18 +22,25 @@ export const useSilentRefresh = () => {
 
       } catch (backendError) {
         const status = backendError?.response?.status || backendError?.status;
+        const errorMessage = (backendError?.response?.data?.message || backendError?.message || "").toLowerCase();
         
-        const isNetworkError =
+        const isConnectionIssue =
           backendError?.message === 'Network Error' ||
           backendError?.code === 'ECONNABORTED' ||
-          backendError?.message?.toLowerCase().includes('timeout') ||
-          backendError?.message?.toLowerCase().includes('failed to fetch');
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('failed to connect') ||
+          errorMessage.includes('network');
 
-        const isServerAwake = status 
-            ? (status !== 502 && status !== 503 && status !== 504) 
-            : !isNetworkError;
+        let isSystemAwake = true;
 
-        if (isServerAwake || attempt === maxRetries) {
+        if (isConnectionIssue) {
+          isSystemAwake = false;
+        } else if (!status || status === 502 || status === 503 || status === 504) {
+          isSystemAwake = false;
+        }
+
+        if (isSystemAwake || attempt === maxRetries) {
           if (onError) onError(backendError, status);
           setIsLoading(false);
           return; 

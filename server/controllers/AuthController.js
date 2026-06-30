@@ -22,13 +22,13 @@ export class AuthController {
         return res.status(401).json({ message: "Invalid email/phone or password" })
       }
 
-      const activeSession = await UserSessionModel.getActiveSessionByDevice(device_id)
-      if (activeSession) {
-        return res.status(403).json({ 
-          message: "This device is already logged in. Please logout first before logging in.",
-          current_owner_id: activeSession.owner_id
-        })
-      }
+      // const activeSession = await UserSessionModel.getActiveSessionByDevice(device_id)
+      // if (activeSession) {
+      //   return res.status(403).json({ 
+      //     message: "This device is already logged in. Please logout first before logging in.",
+      //     current_owner_id: activeSession.owner_id
+      //   })
+      // }
 
       const isPasswordValid = await bcrypt.compare(password, owner.owner_password_hash)    
       if (!isPasswordValid) {
@@ -64,31 +64,25 @@ export class AuthController {
     }
   }
 
-  // Forgot Password - Send Verification Code
   static async forgotPassword(req, res) {
     try {
-      const { identifier } = req.body  // Accept email OR phone
+      const { identifier } = req.body
 
       if (!identifier) {
         return res.status(400).json({ message: "Email or phone number is required" })
       }
 
-      // Check if owner exists (by email or phone)
       const owner = await OwnerModel.getOwnerByEmailOrPhone(identifier)
       if (!owner) {
         return res.status(404).json({ message: "Email or phone number not found in our system" })
       }
 
-      // Generate 6-digit verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-      // Calculate expiry time (10 minutes from now)
       const codeExpiry = new Date(Date.now() + 600000)
 
-      // Save code to database
       await PasswordResetModel.saveResetCode(owner.owner_id, verificationCode, codeExpiry)
 
-      // Send email with verification code
       await sendVerificationCodeEmail(owner.owner_email, verificationCode)
 
       res.status(200).json({ 
@@ -101,7 +95,6 @@ export class AuthController {
     }
   }
 
-  // Verify Code - Check if code is correct
   static async verifyCode(req, res) {
     try {
       const { owner_id, verification_code } = req.body
@@ -110,33 +103,26 @@ export class AuthController {
         return res.status(400).json({ message: "Owner ID and verification code are required" })
       }
 
-      // Get reset code from database
       const resetRecord = await PasswordResetModel.getResetCode(owner_id, verification_code)
       if (!resetRecord) {
-        // Increment failed attempts
         await PasswordResetModel.incrementCodeAttempts(owner_id)
         return res.status(400).json({ message: "Invalid verification code" })
       }
 
-      // Check if code is already used
       if (resetRecord.is_used) {
         return res.status(400).json({ message: "Code has already been used" })
       }
 
-      // Check if too many attempts (max 3)
       if (resetRecord.code_attempts >= 3) {
         return res.status(400).json({ message: "Too many failed attempts. Request a new code." })
       }
 
-      // Check if code has expired
       const now = new Date()
       if (now > resetRecord.token_expiry) {
-        // Hard delete expired code
         await PasswordResetModel.deleteExpiredCodes(owner_id)
         return res.status(400).json({ message: "Code has expired. Request a new one." })
       }
 
-      // Code is valid - return success
       res.status(200).json({ 
         message: "Code verified successfully",
         owner_id: owner_id,
@@ -148,7 +134,6 @@ export class AuthController {
     }
   }
 
-  // Reset Password - Update password after code verification
   static async resetPassword(req, res) {
     try {
       const { owner_id, new_password } = req.body
@@ -157,13 +142,10 @@ export class AuthController {
         return res.status(400).json({ message: "Owner ID and new password are required" })
       }
 
-      // Hash new password
       const hashedPassword = await bcrypt.hash(new_password, 10)
 
-      // Update password in database
       await OwnerModel.updatePassword(owner_id, hashedPassword)
 
-      // Mark code as used
       await PasswordResetModel.markTokenAsUsed(owner_id)
 
       res.status(200).json({ message: "Password reset successfully. You can now login." })
@@ -173,7 +155,6 @@ export class AuthController {
     }
   }
 
-  // Logout - Invalidate session
   static async logout(req, res) {
     try {
       const { device_id } = req.body
@@ -191,7 +172,6 @@ export class AuthController {
   }
 }
 
-// Send Verification Code Email
 async function sendVerificationCodeEmail(email, verificationCode) {
   try {
     const transporter = nodemailer.createTransport({
