@@ -2,7 +2,6 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class VetClinicModel {
-  // Create new clinic
   static async createClinic(clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, place_id, clinic_photo_reference = null) {
     const connection = await dbConnection()
 
@@ -29,7 +28,6 @@ export class VetClinicModel {
     }
   }
 
-  // Get clinic by ID
   static async getClinicById(clinic_id) {
     const connection = await dbConnection()
 
@@ -50,7 +48,6 @@ export class VetClinicModel {
     }
   }
 
-  // Get all clinics
   static async getAllClinics() {
     const connection = await dbConnection()
 
@@ -69,7 +66,6 @@ export class VetClinicModel {
     }
   }
 
-  // Search clinics by name or address
   static async searchClinics(search_term) {
     const connection = await dbConnection()
 
@@ -91,7 +87,6 @@ export class VetClinicModel {
     }
   }
 
-  // Update clinic by place_id (used for sync updates)
   static async updateClinicByPlaceId(place_id, clinic_name, clinic_address, clinic_latitude, clinic_longitude, clinic_phone, clinic_photo_reference) {
     const connection = await dbConnection()
 
@@ -132,7 +127,6 @@ export class VetClinicModel {
     }
   }
 
-  // Check if clinic exists by place_id
   static async clinicExistsByPlaceId(place_id) {
     const connection = await dbConnection()
 
@@ -151,7 +145,6 @@ export class VetClinicModel {
     }
   }
 
-  // Update clinic Cloudinary photo URL
   static async updateClinicPhotoUrl(clinic_id, cloudinaryUrl) {
     const connection = await dbConnection()
 
@@ -176,7 +169,6 @@ export class VetClinicModel {
     }
   }
 
-  // Get clinics sorted by distance from user location
   static async getClinicsByDistance(userLatitude, userLongitude) {
     const connection = await dbConnection()
 

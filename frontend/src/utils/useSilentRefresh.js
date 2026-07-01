@@ -34,9 +34,7 @@ export const useSilentRefresh = () => {
 
         let isSystemAwake = true;
 
-        if (isConnectionIssue) {
-          isSystemAwake = false;
-        } else if (!status || status === 502 || status === 503 || status === 504) {
+        if (isConnectionIssue || status === 502 || status === 503 || status === 504) {
           isSystemAwake = false;
         }
 

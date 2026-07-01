@@ -3,11 +3,12 @@ import { MdArrowBack, MdPerson, MdEmail, MdPhone, MdLock, MdCameraAlt, MdPets, M
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
+import { useSilentRefresh } from "../utils/useSilentRefresh.js"; // 1. IMPORT HOOK
 
 export default function UserProfile() {
   const navigate = useNavigate();
-  const toast = useToast(); // CHAKRA TOAST HOOK
-  const { isOpen: isDeleteOpen, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure(); // MODAL HOOK
+  const toast = useToast();
+  const { isOpen: isDeleteOpen, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure();
 
   const [owner_name, setOwner_name] = useState("");
   const [owner_email, setOwner_email] = useState("");
@@ -15,7 +16,8 @@ export default function UserProfile() {
   const [owner_image_url, setOwner_image_url] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   const [initialData, setInitialData] = useState({});
 
@@ -23,22 +25,12 @@ export default function UserProfile() {
     window.scrollTo(0, 0);
   }, []);
 
-  // --- CUSTOM IN-APP ALERT (TOAST) ---
   const showToast = (message, status = "success") => {
     toast({
       position: "top",
       duration: 3000,
       render: () => (
-        <Box
-          bg={status === "error" ? "red.500" : "Primary.800"}
-          color="white"
-          px={6} py={3}
-          borderRadius="30px"
-          textAlign="center"
-          fontWeight="bold"
-          boxShadow="xl"
-          mt="20px"
-        >
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
           {message}
         </Box>
       ),
@@ -88,62 +80,81 @@ export default function UserProfile() {
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
-    try {
-      const ownerData = JSON.parse(localStorage.getItem("owner"));
-      if (!ownerData?.owner_id) {
-        showToast("User not found", "error");
-        setIsLoading(false);
-        return;
-      }
+    const ownerData = JSON.parse(localStorage.getItem("owner"));
+    if (!ownerData?.owner_id) {
+      showToast("User not found", "error");
+      return;
+    }
 
-      const formData = new FormData();
-      formData.append("owner_name", owner_name);
-      formData.append("owner_email", owner_email);
-      formData.append("owner_phone_number", owner_phone_number);
+    if (!owner_name.trim()) { showToast("Name is required", "error"); return; }
+    if (owner_name.length > 30) { showToast("Name cannot exceed 30 characters", "error"); return; }
+    
+    if (!owner_email.trim()) { showToast("Email is required", "error"); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(owner_email)) { showToast("Invalid email format", "error"); return; }
+    
+    if (!owner_phone_number.trim() || owner_phone_number.length < 11 || owner_phone_number.length > 12) { 
+      showToast("Invalid phone number", "error"); 
+      return; 
+    }
 
-      if (selectedFile) {
-        formData.append("image", selectedFile);
-      }
+    await executeWithRetry(
+      async () => {
+        const formData = new FormData();
+        formData.append("owner_name", owner_name);
+        formData.append("owner_email", owner_email);
+        formData.append("owner_phone_number", owner_phone_number);
 
-      const response = await fetch(
-        `/api/owners/${ownerData.owner_id}`,
-        { method: "PATCH", body: formData }
-      );
+        if (selectedFile) {
+          formData.append("image", selectedFile);
+        }
 
-      const result = await response.json();
-
-      if (response.ok) {
-        const finalImageUrl = result.data?.owner_image_url || owner_image_url;
-
-        const updatedOwner = {
-          ...ownerData,
-          owner_name,
-          owner_email,
-          owner_phone_number,
-          owner_image_url: finalImageUrl
-        };
-        localStorage.setItem("owner", JSON.stringify(updatedOwner));
-
-        setInitialData({
-          name: owner_name,
-          email: owner_email,
-          phone: owner_phone_number,
-          image: finalImageUrl
+        const response = await fetch(`/api/owners/${ownerData.owner_id}`, { 
+          method: "PATCH", 
+          body: formData 
         });
 
-        showToast("Profile updated successfully!"); // REPLACED ALERT
-        setIsEdit(false);
-        setSelectedFile(null);
-      } else {
-        showToast(result.message || "Failed to update profile", "error");
+        const result = await response.json();
+        
+        if (!response.ok) {
+          const err = new Error(result.message || "Failed to update profile");
+          err.status = response.status;
+          throw err;
+        }
+
+        return result;
+      },
+      {
+        defaultLoadingText: "Saving...",
+        onSuccess: (result) => {
+          const finalImageUrl = result.data?.owner_image_url || owner_image_url;
+
+          const updatedOwner = {
+            ...ownerData,
+            owner_name,
+            owner_email,
+            owner_phone_number,
+            owner_image_url: finalImageUrl
+          };
+          localStorage.setItem("owner", JSON.stringify(updatedOwner));
+
+          setInitialData({
+            name: owner_name,
+            email: owner_email,
+            phone: owner_phone_number,
+            image: finalImageUrl
+          });
+
+          showToast("Profile updated successfully!");
+          setIsEdit(false);
+          setSelectedFile(null);
+        },
+        onError: (backendError) => {
+          console.error("Save error:", backendError);
+          showToast(backendError.message || "Error updating profile", "error");
+        }
       }
-    } catch (error) {
-      console.error("Save error:", error);
-      showToast("Error updating profile", "error");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   const handleDeleteAccount = async () => {
@@ -232,7 +243,20 @@ export default function UserProfile() {
             <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Full Name</Text>
             <InputGroup>
               <InputLeftElement pointerEvents="none" color="Primary.800"><MdPerson /></InputLeftElement>
-              <Input value={owner_name} onChange={(e) => setOwner_name(e.target.value.replace(/[^A-Za-z\s]/g, ""))} isReadOnly={!isEdit} bg={isEdit ? "white" : "Neutral.100"} borderRadius="30px" border={isEdit ? "1px solid" : "none"} borderColor="Primary.300" focusBorderColor="Primary.800" fontWeight="medium" color="Primary.900" transition="all 0.2s" />
+              <Input 
+                maxLength={30} 
+                value={owner_name} 
+                onChange={(e) => setOwner_name(e.target.value.replace(/[^A-Za-z\s]/g, ""))} 
+                isReadOnly={!isEdit} 
+                bg={isEdit ? "white" : "Neutral.100"} 
+                borderRadius="30px" 
+                border={isEdit ? "1px solid" : "none"} 
+                borderColor="Primary.300" 
+                focusBorderColor="Primary.800" 
+                fontWeight="medium" 
+                color="Primary.900" 
+                transition="all 0.2s" 
+              />
             </InputGroup>
           </Box>
 
@@ -240,7 +264,19 @@ export default function UserProfile() {
             <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Email Address</Text>
             <InputGroup>
               <InputLeftElement pointerEvents="none" color="Primary.800"><MdEmail /></InputLeftElement>
-              <Input value={owner_email} onChange={(e) => setOwner_email(e.target.value)} isReadOnly={!isEdit} bg={isEdit ? "white" : "Neutral.100"} borderRadius="30px" border={isEdit ? "1px solid" : "none"} borderColor="Primary.300" focusBorderColor="Primary.800" fontWeight="medium" color="Primary.900" transition="all 0.2s" />
+              <Input 
+                value={owner_email} 
+                onChange={(e) => setOwner_email(e.target.value.trim())} 
+                isReadOnly={!isEdit} 
+                bg={isEdit ? "white" : "Neutral.100"} 
+                borderRadius="30px" 
+                border={isEdit ? "1px solid" : "none"} 
+                borderColor="Primary.300" 
+                focusBorderColor="Primary.800" 
+                fontWeight="medium" 
+                color="Primary.900" 
+                transition="all 0.2s" 
+              />
             </InputGroup>
           </Box>
 
@@ -248,7 +284,20 @@ export default function UserProfile() {
             <Text ml={4} mb={1} fontSize="xs" fontWeight="bold" color="Primary.800" textTransform="uppercase" letterSpacing="wide">Phone Number</Text>
             <InputGroup>
               <InputLeftElement pointerEvents="none" color="Primary.800"><MdPhone /></InputLeftElement>
-              <Input value={owner_phone_number} onChange={(e) => setOwner_phone_number(e.target.value.replace(/\D/g, ""))} isReadOnly={!isEdit} bg={isEdit ? "white" : "Neutral.100"} borderRadius="30px" border={isEdit ? "1px solid" : "none"} borderColor="Primary.300" focusBorderColor="Primary.800" fontWeight="medium" color="Primary.900" transition="all 0.2s" />
+              <Input 
+                maxLength={12} 
+                value={owner_phone_number} 
+                onChange={(e) => setOwner_phone_number(e.target.value.replace(/\D/g, ""))} 
+                isReadOnly={!isEdit} 
+                bg={isEdit ? "white" : "Neutral.100"} 
+                borderRadius="30px" 
+                border={isEdit ? "1px solid" : "none"} 
+                borderColor="Primary.300" 
+                focusBorderColor="Primary.800" 
+                fontWeight="medium" 
+                color="Primary.900" 
+                transition="all 0.2s" 
+              />
             </InputGroup>
           </Box>
 
@@ -262,7 +311,7 @@ export default function UserProfile() {
         {isEdit ? (
           <Flex direction="column" gap={3} mt="20px">
             <Button w="100%" h="50px" bg="Primary.800" color="white" borderRadius="30px" fontSize="lg" fontWeight="bold" _hover={{ opacity: 0.9 }} onClick={handleSave} isDisabled={isLoading} boxShadow="md">
-              {isLoading ? "Saving..." : "Save Changes"}
+              {isLoading ? loadingText : "Save Changes"}
             </Button>
             <Button w="100%" h="50px" bg="white" color="red.500" border="1px solid" borderColor="red.500" borderRadius="30px" fontSize="lg" fontWeight="bold" _hover={{ bg: "red.50" }} onClick={onOpenDelete}>
               Delete Account
@@ -277,7 +326,6 @@ export default function UserProfile() {
         )}
       </Box>
 
-      {/* --- CUSTOM CONFIRMATION MODAL (Replaces window.confirm) --- */}
       <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">

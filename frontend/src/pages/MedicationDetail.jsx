@@ -121,6 +121,27 @@ export default function MedicationDetail() {
   };
 
   const handleSavePet = async () => {
+    if (!pet_name.trim()) {
+      showToast("Pet Name is required!", "error");
+      return;
+    }
+    if (pet_name.length > 30) {
+      showToast("Pet Name cannot exceed 30 characters!", "error");
+      return;
+    }
+    if (!pet_dob) {
+      showToast("Date of Birth is required!", "error");
+      return;
+    }
+    if (!pet_type) {
+      showToast("Pet Type is required!", "error");
+      return;
+    }
+    if (!pet_gender) {
+      showToast("Pet Gender is required!", "error");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -141,7 +162,6 @@ export default function MedicationDetail() {
         setPet(response.data.data);
         showToast("Pet profile updated!");
         setIsOpen(false);
-
         updateCache('myPets', null);
       }
     } catch (error) {
@@ -206,7 +226,6 @@ export default function MedicationDetail() {
 
               <Text color="Primary.800" fontWeight="medium" fontSize="md">DOB</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
-              {/* READABLE DATE FORMAT */}
               <Text color="Primary.900" fontWeight="bold" fontSize="lg">
                 {pet.pet_dob ? new Date(pet.pet_dob).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
               </Text>
@@ -296,7 +315,9 @@ export default function MedicationDetail() {
                   <Input type="file" accept="image/*" position="absolute" top="0" left="0" w="100%" h="100%" opacity="0" cursor="pointer" onChange={handleImageUpload} />
                 </Box>
               </Flex>
-              <Box><Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text><Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" /></Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
+                <Input placeholder="Name" maxLength={30} value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" />              </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
                 <InputGroup>

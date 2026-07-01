@@ -31,7 +31,6 @@ export default function MedicationForm() {
   
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
 
-  // --- CUSTOM IN-APP ALERT (TOAST) ---
   const showToast = (message, status = "success") => {
     toast({
         position: "top",
@@ -186,7 +185,6 @@ export default function MedicationForm() {
   return (
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px">
       
-      {/* STANDARD HEADER */}
       <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
         <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate(`/mypet/${id}`)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
           <MdArrowBack size="28px" />
@@ -200,10 +198,9 @@ export default function MedicationForm() {
         <Text mb="6px" color="Primary.800" fontSize="md">
           Examination Date
         </Text>
-        <Input type="date" color="Primary.800" bg="Primary.100" border="none" value={record_visit_date} onChange={(e) => setRecord_visit_date(removeEmojis(e.target.value))} max={todayStr} />
+        <Input bg="Primary.100" border="none" focusBorderColor="Primary.800" color="Primary.800" type="date" value={record_visit_date} max={todayStr} textAlign="left" onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={(e) => setRecord_visit_date(removeEmojis(e.target.value))} cursor="pointer" sx={{ "::-webkit-calendar-picker-indicator": { display: "none" } }} />
       </Box>
 
-      {/* CHAKRA MENU DROPDOWN FIX */}
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800" fontSize="md">
           Consultation Type
@@ -255,14 +252,14 @@ export default function MedicationForm() {
         <Text mb="6px" color="Primary.800" fontSize="md">
           Veterinarian
         </Text>
-        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_name} onChange={(e) => setRecord_vet_name(removeEmojis(e.target.value))} />
+        <Input bg="Primary.100" color="Primary.800" border="none" focusBorderColor="Primary.800" value={record_vet_name} onChange={(e) => setRecord_vet_name(removeEmojis(e.target.value))} />
       </Box>
 
       <Box bg="Primary.200" p="12px" borderRadius="14px">
         <Text mb="6px" color="Primary.800" fontSize="md">
           Veterinary Clinic
         </Text>
-        <Input bg="Primary.100" color="Primary.800" border="none" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(removeEmojis(e.target.value))} />
+        <Input bg="Primary.100" color="Primary.800" border="none" focusBorderColor="Primary.800" value={record_vet_clinic_name} onChange={(e) => setRecord_vet_clinic_name(removeEmojis(e.target.value))} />
       </Box>
 
       <Flex gap={4}>
@@ -270,13 +267,13 @@ export default function MedicationForm() {
           <Text mb="6px" color="Primary.800" fontSize="md">
             Weight (kg)
           </Text>
-          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(sanitizeWeight(e.target.value))} />
+          <Input bg="Primary.100" color="Primary.800" border="none" focusBorderColor="Primary.800" value={record_pet_weight} onChange={(e) => setRecord_pet_weight(sanitizeWeight(e.target.value))} />
         </Box>
         <Box bg="Primary.200" p="12px" borderRadius="14px" flex="1">
           <Text mb="6px" color="Primary.800" fontSize="md">
             Temperature (°C)
           </Text>
-          <Input bg="Primary.100" color="Primary.800" border="none" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(sanitizeTemperature(e.target.value))} />
+          <Input bg="Primary.100" color="Primary.800" border="none" focusBorderColor="Primary.800" value={record_pet_temperature} onChange={(e) => setRecord_pet_temperature(sanitizeTemperature(e.target.value))} />
         </Box>
       </Flex>
 
@@ -287,6 +284,7 @@ export default function MedicationForm() {
         <Textarea
           bg="Primary.100"
           border="none"
+          focusBorderColor="Primary.800"
           resize="none"
           color="Primary.800" 
           h="180px"
@@ -354,7 +352,6 @@ export default function MedicationForm() {
         )}
       </Flex>
 
-      {/* ACTION BUTTONS */}
       {isEditMode ? (
         <Flex direction="column" gap={3} mt="4">
           <Flex gap={4}>

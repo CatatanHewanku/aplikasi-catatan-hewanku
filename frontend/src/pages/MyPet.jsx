@@ -12,7 +12,6 @@ export default function MyPet() {
   const toast = useToast();
   const { getCachedData, updateCache } = useContext(CacheContext);
 
-  // === PERBAIKAN 1: Mengambil owner_id dari localStorage ===
   const [owner_id] = useState(() => {
     const ownerData = JSON.parse(localStorage.getItem("owner"));
     return ownerData?.owner_id || null;
@@ -121,12 +120,27 @@ export default function MyPet() {
   };
 
   const savePet = async () => {
-    if (!pet_name || !pet_type || !pet_gender) {
-      showToast("Name, Type, and Gender are required!", "error");
+    if (!pet_name.trim()) {
+      showToast("Pet Name is required!", "error");
+      return;
+    }
+    if (pet_name.length > 30) {
+      showToast("Pet Name cannot exceed 30 characters!", "error");
+      return;
+    }
+    if (!pet_dob) {
+      showToast("Date of Birth is required!", "error");
+      return;
+    }
+    if (!pet_type) {
+      showToast("Pet Type is required!", "error");
+      return;
+    }
+    if (!pet_gender) {
+      showToast("Pet Gender is required!", "error");
       return;
     }
 
-    // Pastikan owner_id ada sebelum menyimpan
     if (!owner_id) {
       showToast("Owner ID not found. Please log in again.", "error");
       return;
@@ -139,8 +153,7 @@ export default function MyPet() {
       formData.append('pet_dob', pet_dob);
       formData.append('pet_type', pet_type);
       formData.append('pet_gender', pet_gender);
-      
-      // === PERBAIKAN 2: Menambahkan owner_id ke dalam payload request ===
+
       formData.append('owner_id', owner_id);
 
       if (pet_image && pet_image instanceof File) {
@@ -160,7 +173,6 @@ export default function MyPet() {
         showToast("Pet added successfully");
       }
 
-      // Ambil ulang data agar tampilan selalu fresh
       const responseList = await api.get('/pets/owner');
       const updatedPets = responseList.data.data;
 
@@ -301,7 +313,7 @@ export default function MyPet() {
 
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
-                <Input placeholder="Name" value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" />
+                <Input placeholder="Name" maxLength={30} value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" />
               </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>

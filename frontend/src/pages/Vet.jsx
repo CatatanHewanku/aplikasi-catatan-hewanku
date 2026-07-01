@@ -12,9 +12,8 @@ export default function Vet() {
   const [clinics, setClinics] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // === State untuk Pagination ===
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; 
+  const itemsPerPage = 8;
 
   const showToast = (message, status = "error") => {
     toast({
@@ -48,9 +47,8 @@ export default function Vet() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [currentPage]); 
+  }, [currentPage]);
 
-  // Reset Halaman saat Pencarian
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
@@ -181,11 +179,14 @@ export default function Vet() {
     }
   };
 
-  const filteredClinics = clinics.filter((clinic) =>
-    clinic.clinic_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredClinics = clinics.filter((clinic) => {
+    const searchKeyword = search.toLowerCase();
+    const matchName = clinic.clinic_name?.toLowerCase().includes(searchKeyword);
+    const matchAddress = clinic.clinic_address?.toLowerCase().includes(searchKeyword);
 
-  // === Logika Pagination ===
+    return matchName || matchAddress;
+  });
+
   const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
   const indexOfLastClinic = currentPage * itemsPerPage;
   const indexOfFirstClinic = indexOfLastClinic - itemsPerPage;
@@ -225,7 +226,7 @@ export default function Vet() {
           ) : currentClinics.length > 0 ? (
             currentClinics.map((clinic, index) => {
               const absoluteIndex = indexOfFirstClinic + index;
-              
+
               const showFavoriteHeader = absoluteIndex === 0 && clinic.isFavorite;
               const showDividerAndOtherHeader = !clinic.isFavorite && absoluteIndex > 0 && filteredClinics[absoluteIndex - 1].isFavorite;
               const showAllClinicsHeader = absoluteIndex === 0 && !clinic.isFavorite;
@@ -317,7 +318,7 @@ export default function Vet() {
         {/* === Antarmuka Pagination Diperbarui === */}
         {totalPages > 1 && (
           <Flex justify="space-between" align="center" mt={6} pb={4}>
-            
+
             {/* Kelompok Tombol Kiri */}
             <Flex gap={2}>
               <Button
@@ -345,12 +346,12 @@ export default function Vet() {
                 Prev
               </Button>
             </Flex>
-            
+
             {/* Teks Informasi Halaman */}
             <Text fontFamily="heading" fontWeight="bold" color="Primary.900" fontSize="sm" textAlign="center">
               Page {currentPage} of {totalPages}
             </Text>
-            
+
             {/* Kelompok Tombol Kanan */}
             <Flex gap={2}>
               <Button

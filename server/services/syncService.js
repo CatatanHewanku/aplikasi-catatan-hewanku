@@ -5,17 +5,16 @@ import { cloudinary } from '../config/cloudinary.js'
 import { Readable } from "stream"
 import axios from "axios"
 
-// Bekasi area only (using city name for geocoding)
 const INDONESIAN_CITIES = [
-  { name: 'Bekasi', country: 'West Java' }
+  // { name: 'Jakarta', country: 'Indonesia' },
+  // { name: 'Bogor', country: 'West Java' },
+  // { name: 'Depok', country: 'West Java' },
+  { name: 'Tangerang', country: 'Banten' },
+  // { name: 'Bekasi', country: 'West Java' },
 ]
 
-// Cache metadata: stores which cities were synced and when
 const cacheMetadata = new Map()
 
-/**
- * Download photo from Google and upload to Cloudinary
- */
 async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
   try {
     if (!photoReference) return null

@@ -5,7 +5,6 @@ import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js"
 import { Readable } from "stream"
 import axios from "axios"
 
-// === PERUBAHAN UTAMA: Menggunakan clinicName dan encodeURIComponent ===
 const getGoogleMapsUrl = (clinicName) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinicName)}`
 
 async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
@@ -69,7 +68,6 @@ export class VetClinicController {
         return res.status(404).json({ message: "Clinic not found" })
       }
 
-      // === PERUBAHAN: Memanggil dengan clinic_name ===
       clinic.google_map_url = getGoogleMapsUrl(clinic.clinic_name)
 
       res.status(200).json({ message: "Clinic retrieved successfully", data: clinic })
@@ -83,7 +81,6 @@ export class VetClinicController {
       const clinics = await VetClinicModel.getAllClinics()
       
       for (const clinic of clinics) {
-        // === PERUBAHAN: Memanggil dengan clinic_name ===
         clinic.google_map_url = getGoogleMapsUrl(clinic.clinic_name);
         
         if (!clinic.clinic_photo_cloudinary_url && clinic.clinic_photo_reference) {
@@ -116,7 +113,6 @@ export class VetClinicController {
       const clinics = await VetClinicModel.searchClinics(search_term)
       
       clinics.forEach(clinic => {
-        // === PERUBAHAN: Memanggil dengan clinic_name ===
         clinic.google_map_url = getGoogleMapsUrl(clinic.clinic_name)
       })
 
@@ -190,7 +186,6 @@ export class VetClinicController {
       const clinics = await VetClinicModel.getClinicsByDistance(latitude, longitude)
       
       for (const clinic of clinics) {
-        // === PERUBAHAN: Memanggil dengan clinic_name ===
         clinic.google_map_url = getGoogleMapsUrl(clinic.clinic_name)
         
         if (!clinic.clinic_photo_cloudinary_url && clinic.clinic_photo_reference) {

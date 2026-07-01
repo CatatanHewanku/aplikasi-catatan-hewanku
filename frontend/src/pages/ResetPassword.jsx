@@ -40,10 +40,13 @@ export default function ResetPassword() {
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    if (!loggedInOwner && !savedCode) {
-      navigate("/forgot-password-email");
+    const checkOwner = JSON.parse(localStorage.getItem("owner"));
+    const checkCode = localStorage.getItem("resetCode");
+
+    if (!checkOwner && !checkCode) {
+      navigate("/forgot-password-email", { replace: true });
     }
-  }, [navigate, loggedInOwner, savedCode]);
+  }, [navigate]);
 
   const showToast = (message, status = "success") => {
     toast({
@@ -102,7 +105,8 @@ export default function ResetPassword() {
           localStorage.removeItem("resetEmail");
           localStorage.removeItem("resetCode");
           showToast(isChangeMode ? "Password changed successfully!" : "Password updated successfully!", "success");
-          navigate(isChangeMode ? -1 : "/");
+          
+          navigate(isChangeMode ? -1 : "/", { replace: true });
         },
         onError: (backendError) => {
           setError(backendError?.response?.data?.message || backendError?.message || "Failed to update password. Please try again.");

@@ -34,7 +34,7 @@ export default function SignUp() {
 
   const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  
+
   const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
 
   useEffect(() => {
@@ -43,17 +43,24 @@ export default function SignUp() {
 
   const handleFirstName = (e) => {
     const value = e.target.value;
+
+    if (value.length > 30) {
+      setNameError("Name cannot exceed 30 characters");
+      return;
+    }
+
     const regex = /^[A-Za-z\s]*$/;
     if (regex.test(value)) {
       setFirstName(value);
       setNameError("");
     } else {
-      setNameError("First name cannot contain numbers or symbols");
+      setNameError("Name cannot contain numbers or symbols");
     }
   };
 
   const handleSignUp = async () => {
-    if (!firstName.trim()) { setNameError("First name is required"); return; }
+    if (!firstName.trim()) { setNameError("Name is required"); return; }
+    if (firstName.length > 30) { setNameError("Name cannot exceed 30 characters"); return; }
     if (!email.trim()) { setPasswordError("Email is required"); return; }
     if (!email.includes('@')) { setPasswordError("Invalid email format"); return; }
     if (!phone.trim() || phone.length < 11 || phone.length > 12) { setPasswordError("Valid phone number is required"); return; }
@@ -71,13 +78,13 @@ export default function SignUp() {
       () => authService.signup(firstName, email, phone, password),
       {
         defaultLoadingText: "Signing Up...",
-        
+
         onSuccess: () => {
           console.log("Backend signup success");
           localStorage.setItem("isLogin", "true");
           window.location.href = "/";
         },
-        
+
         onError: (backendError) => {
           console.log("Backend signup failed:", backendError);
           const errorMessage = backendError?.response?.data?.message || backendError?.message || "Signup failed. Try with a new email.";
@@ -106,9 +113,9 @@ export default function SignUp() {
             <InputLeftElement pointerEvents="none" color="Primary.800">
               <MdPerson size="20px" />
             </InputLeftElement>
-            <Input placeholder="First Name" value={firstName} onChange={handleFirstName} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
+            <Input placeholder="Name" maxLength={30} value={firstName} onChange={handleFirstName} bg="white" borderRadius="30px" border="1px" borderColor="Primary.800" boxShadow="md" _focus={{ borderColor: "Primary.800", boxShadow: "md" }} />
           </InputGroup>
-          
+
           <InputGroup>
             <InputLeftElement pointerEvents="none" color="Primary.800">
               <MdEmail size="20px" />
@@ -138,7 +145,7 @@ export default function SignUp() {
               {showConfirmPassword ? <MdVisibilityOff color="gray" size="20px" /> : <MdVisibility color="gray" size="20px" />}
             </InputRightElement>
           </InputGroup>
-          
+
           {/* === BLOK ERROR GABUNGAN === */}
           {(nameError || passwordError) && (
             <Text color="red.400" fontSize="sm" whiteSpace="pre-wrap" mt="-2">
@@ -147,7 +154,7 @@ export default function SignUp() {
           )}
 
         </Flex>
-        
+
         <Flex align="center" direction="column">
           <Button
             mt="20px"
