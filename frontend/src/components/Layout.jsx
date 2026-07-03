@@ -1,15 +1,15 @@
 import { Box } from "@chakra-ui/react";
-import Navbar from "../pages/Navbar.jsx";
+import { useLocation } from "react-router-dom";
 
 export default function Layout({ children }) {
-  return (
-    <Box minH="100vh">
-      
-      <Box pb="60px"> 
-        {children}
-      </Box>
+  const location = useLocation();
 
-      <Navbar />
+  const hideNavPages = ["/medication-form", "/quick-notes", "/user-profile"];
+  const isNavHidden = hideNavPages.some(path => location.pathname.includes(path));
+
+  return (
+    <Box pb={isNavHidden ? "0px" : "60px"}>
+      {children}
     </Box>
   );
 }
