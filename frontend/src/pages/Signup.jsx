@@ -59,10 +59,15 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!firstName.trim()) { setNameError("Name is required"); return; }
     if (firstName.length > 30) { setNameError("Name cannot exceed 30 characters"); return; }
     if (!email.trim()) { setPasswordError("Email is required"); return; }
-    if (!email.includes('@')) { setPasswordError("Invalid email format"); return; }
+    if (!emailRegex.test(email)) {
+      setPasswordError("Invalid email format.");
+      return;
+    }
     if (!phone.trim() || phone.length < 11 || phone.length > 12) { setPasswordError("Valid phone number is required"); return; }
     if (!password) { setPasswordError("Password is required"); return; }
 

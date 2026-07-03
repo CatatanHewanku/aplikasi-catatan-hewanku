@@ -19,6 +19,9 @@ export default function Navbar() {
   if (location.pathname.includes("/quick-notes")) {
     return null;
   }
+  if (location.pathname.includes("/user-profile")) {
+    return null;
+  }
 
   return (
     <Flex position="fixed" bottom="20px" left="0" right="0" justify="center" px="20px" zIndex="1000" pointerEvents="none" opacity={0.7}>
