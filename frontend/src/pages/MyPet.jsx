@@ -313,32 +313,12 @@ export default function MyPet() {
 
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Name</Text>
-                <Input placeholder="Name" maxLength={30} value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} borderColor="Primary.800" focusBorderColor="Primary.900" />
+                <Input placeholder="Pet name" focusBorderColor="Primary.800" bg="white" border="1px solid" borderColor="Primary.800" color="Primary.800" value={pet_name} onChange={(e) => setPet_name(removeEmojis(e.target.value))} />
               </Box>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Date of Birth</Text>
                 <InputGroup>
-                  <Input
-                    type="date"
-                    value={pet_dob}
-                    max={todayStr}
-                    textAlign="left"
-                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                    onChange={(e) => setPet_dob(removeEmojis(e.target.value))}
-                    borderColor="Primary.800"
-                    focusBorderColor="Primary.900"
-                    cursor="pointer"
-                    sx={{
-                      "::-webkit-calendar-picker-indicator": {
-                        display: "none",
-                      }
-                    }}
-                  />
-                  <InputRightElement pointerEvents="none">
-                    <Box color="Primary.800">
-                      <MdDateRange size="20px" />
-                    </Box>
-                  </InputRightElement>
+                  <Input borderColor="Primary.800" focusBorderColor="Primary.800" color="Primary.800" type="date" value={pet_dob} max={todayStr} textAlign="left" onClick={(e) => e.target.showPicker && e.target.showPicker()} onChange={(e) => setPet_dob(removeEmojis(e.target.value))} cursor="pointer" sx={{ "::-webkit-calendar-picker-indicator": { display: "none" } }} />
                 </InputGroup>
               </Box>
               <Box>
@@ -346,7 +326,7 @@ export default function MyPet() {
                 <Menu matchWidth>
                   <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.800" borderRadius="md" px="16px" cursor="pointer" alignItems="center">
                     <Flex justify="space-between" align="center" h="100%">
-                      <Text color={pet_type ? "black" : "gray.500"} fontSize="md">{pet_type || "Pet Type"}</Text>
+                      <Text color="Primary.800" fontSize="md">{pet_type || "Pet Type"}</Text>
                       <MdKeyboardArrowDown color="gray" size="20px" />
                     </Flex>
                   </MenuButton>
@@ -367,7 +347,7 @@ export default function MyPet() {
                 <Menu matchWidth>
                   <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.800" borderRadius="md" px="16px" cursor="pointer" alignItems="center">
                     <Flex justify="space-between" align="center" h="100%">
-                      <Text color={pet_gender ? "black" : "gray.500"} fontSize="md">{pet_gender || "Gender"}</Text>
+                      <Text color="Primary.800" fontSize="md">{pet_gender || "Gender"}</Text>
                       <MdKeyboardArrowDown color="gray" size="20px" />
                     </Flex>
                   </MenuButton>
