@@ -7,7 +7,7 @@ import { removeEmojis } from "../utils/textUtils";
 import api from "../services/authService.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 
-const calculateAgeCategory = (dobString) => {
+const calculateAgeCategory = (dobString, petType) => {
   if (!dobString) return null;
   const dob = new Date(dobString);
   if (isNaN(dob.getTime())) return null;
@@ -15,9 +15,11 @@ const calculateAgeCategory = (dobString) => {
   let months = (today.getFullYear() - dob.getFullYear()) * 12;
   months += today.getMonth() - dob.getMonth();
   const years = Math.floor(months / 12);
-  if (months < 18) return "Junior";
-  else if (years < 7) return "Adult";
-  else return "Senior";
+  const type = petType;
+  if (type === "Other") return;
+  if (months < 18) return "(Junior)";
+  else if (years < 7) return "(Adult)";
+  else return "(Senior)";
 };
 
 export default function MedicationDetail() {
@@ -232,7 +234,7 @@ export default function MedicationDetail() {
 
               <Text color="Primary.800" fontWeight="medium" fontSize="md">Type</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
-              <Text color="Primary.900" fontWeight="bold" fontSize="lg">{pet.pet_type} ({calculateAgeCategory(pet.pet_dob)})</Text>
+              <Text color="Primary.900" fontWeight="bold" fontSize="lg">{pet.pet_type} {calculateAgeCategory(pet.pet_dob, pet.pet_type)}</Text>
 
               <Text color="Primary.800" fontWeight="medium" fontSize="md">Gender</Text>
               <Text color="Primary.800" fontSize="md">:</Text>
@@ -351,7 +353,7 @@ export default function MedicationDetail() {
                     <Flex justify="space-between" align="center" h="100%"><Text color={pet_type ? "black" : "gray.500"} fontSize="md">{pet_type || "Pet Type"}</Text><MdKeyboardArrowDown color="gray" size="20px" /></Flex>
                   </MenuButton>
                   <MenuList bg="white" borderColor="Primary.300" zIndex={1500} p={0} borderRadius="md" boxShadow="lg">
-                    {["Cat", "Dog"].map((opt, index, arr) => (
+                    {["Cat", "Dog", "Other"].map((opt, index, arr) => (
                       <MenuItem key={opt} onClick={() => setPet_type(opt)} bg={pet_type === opt ? "Primary.100" : "white"} _hover={{ bg: "Primary.50" }} color="Primary.900" fontWeight={pet_type === opt ? "bold" : "medium"} borderBottom={index !== arr.length - 1 ? "1px solid" : "none"} borderColor="Primary.300" py={3}>{opt}</MenuItem>
                     ))}
                   </MenuList>

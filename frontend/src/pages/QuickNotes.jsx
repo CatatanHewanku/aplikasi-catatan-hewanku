@@ -276,7 +276,7 @@ export default function QuickNotes() {
               </Flex>
             </MenuButton>
             <MenuList bg="white" borderColor="Primary.800" zIndex={10} p={0} borderRadius="md" boxShadow="lg">
-              {["Cat", "Dog"].map((opt, i) => (
+              {["Cat", "Dog", "Other"].map((opt, i) => (
                 <MenuItem key={opt} onClick={() => setTypePet(opt)} bg={typePet === opt ? "Primary.100" : "white"} color="Primary.800" fontWeight={typePet === opt ? "bold" : "normal"} borderBottom={i === 0 ? "1px solid" : "none"} borderColor="Primary.200" py={2}>{opt}</MenuItem>
               ))}
             </MenuList>

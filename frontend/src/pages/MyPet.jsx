@@ -331,7 +331,7 @@ export default function MyPet() {
                     </Flex>
                   </MenuButton>
                   <MenuList bg="white" borderColor="Primary.300" zIndex={1500} p={0} borderRadius="md" boxShadow="lg">
-                    {["Cat", "Dog"].map((opt, index, arr) => {
+                    {["Cat", "Dog", "Other"].map((opt, index, arr) => {
                       const isSelected = pet_type === opt;
                       return (
                         <MenuItem key={opt} onClick={() => setPet_type(opt)} bg={isSelected ? "Primary.100" : "white"} _hover={{ bg: "Primary.50" }} color="Primary.900" fontWeight={isSelected ? "bold" : "medium"} borderBottom={index !== arr.length - 1 ? "1px solid" : "none"} borderColor="Primary.300" py={3}>
