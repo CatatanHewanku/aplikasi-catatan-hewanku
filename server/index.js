@@ -45,7 +45,6 @@ app.get("/api/status", (req, res) => {
   })
 })
 
-// API Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/owners", ownerRoutes)
 app.use("/api/pets", petRoutes)

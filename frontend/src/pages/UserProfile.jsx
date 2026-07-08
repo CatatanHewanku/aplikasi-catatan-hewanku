@@ -16,10 +16,10 @@ export default function UserProfile() {
   const [owner_image_url, setOwner_image_url] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [initialData, setInitialData] = useState({});
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const { isLoading, loadingText, executeWithRetry } = useSilentRefresh();
-
-  const [initialData, setInitialData] = useState({});
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -183,10 +183,13 @@ export default function UserProfile() {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authService.logout();
+      setIsLoggingOut(false);
     } catch (error) {
       console.error("Logout error:", error);
+      setIsLoggingOut(false);
     }
     localStorage.removeItem("isLogin");
     localStorage.removeItem("token");
@@ -319,8 +322,8 @@ export default function UserProfile() {
           </Flex>
         ) : (
           <Flex justify="center" mt="20px">
-            <Button variant="ghost" color="red.500" fontWeight="bold" onClick={handleLogout} _hover={{ bg: "red.50" }} borderRadius="30px" w="100%">
-              Log Out
+            <Button variant="ghost" color="red.500" fontWeight="bold" onClick={handleLogout} _hover={{ bg: "red.50" }} isDisabled={isLoggingOut} borderRadius="30px" w="100%">
+              {isLoggingOut ? "Logging Out..." : "Log Out"}
             </Button>
           </Flex>
         )}

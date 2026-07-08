@@ -31,6 +31,7 @@ export default function MedicationDetail() {
   const [pet, setPet] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [logs, setLogs] = useState([]);
 
@@ -123,26 +124,11 @@ export default function MedicationDetail() {
   };
 
   const handleSavePet = async () => {
-    if (!pet_name.trim()) {
-      showToast("Pet Name is required!", "error");
-      return;
-    }
-    if (pet_name.length > 30) {
-      showToast("Pet Name cannot exceed 30 characters!", "error");
-      return;
-    }
-    if (!pet_dob) {
-      showToast("Date of Birth is required!", "error");
-      return;
-    }
-    if (!pet_type) {
-      showToast("Pet Type is required!", "error");
-      return;
-    }
-    if (!pet_gender) {
-      showToast("Pet Gender is required!", "error");
-      return;
-    }
+    if (!pet_name.trim()) { showToast("Pet Name is required!", "error"); return; }
+    if (pet_name.length > 30) { showToast("Pet Name cannot exceed 30 characters!", "error"); return; }
+    if (!pet_dob) { showToast("Date of Birth is required!", "error"); return; }
+    if (!pet_type) { showToast("Pet Type is required!", "error"); return; }
+    if (!pet_gender) { showToast("Pet Gender is required!", "error"); return; }
 
     setIsSaving(true);
     try {
@@ -175,6 +161,7 @@ export default function MedicationDetail() {
   };
 
   const handleSaveNotes = async () => {
+    setIsSavingNotes(true);
     try {
       const response = await api.patch(`/pets/${id}`, {
         pet_name: pet.pet_name,
@@ -191,6 +178,8 @@ export default function MedicationDetail() {
       }
     } catch (error) {
       showToast("Failed to save notes", "error");
+    } finally {
+      setIsSavingNotes(false);
     }
   };
 
@@ -284,17 +273,46 @@ export default function MedicationDetail() {
         </Box>
       </Box>
 
-      <Modal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} isCentered closeOnOverlayClick={false}>
+      <Modal isOpen={isNotesOpen} onClose={() => !isSavingNotes && setIsNotesOpen(false)} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent bg="Primary.200" borderRadius="16px" mx="20px" boxShadow="xl">
           <ModalBody p="16px">
             <Flex justify="space-between" align="center" mb="16px">
-              <Text color="Primary.800" cursor="pointer" fontWeight="bold" onClick={() => setIsNotesOpen(false)}>Cancel</Text>
+              <Text
+                color="Primary.800"
+                cursor={isSavingNotes ? "not-allowed" : "pointer"}
+                opacity={isSavingNotes ? 0.5 : 1}
+                fontWeight="bold"
+                onClick={() => !isSavingNotes && setIsNotesOpen(false)}
+              >
+                Cancel
+              </Text>
               <Text color="Primary.800" fontSize="lg" fontWeight="bold">Edit Notes</Text>
-              <Text color="Primary.800" cursor="pointer" fontWeight="bold" onClick={handleSaveNotes}>Save</Text>
+
+              {isSavingNotes ? (
+                <Spinner size="sm" color="Primary.800" />
+              ) : (
+                <Text
+                  color="Primary.800"
+                  cursor="pointer"
+                  fontWeight="bold"
+                  onClick={handleSaveNotes}
+                >
+                  Save
+                </Text>
+              )}
             </Flex>
             <Box bg="white" borderRadius="12px" px="14px" py="10px" boxShadow="sm">
-              <Textarea placeholder="Please type your input here..." border="none" resize="none" minH="150px" value={tempNotes} onChange={(e) => setTempNotes(e.target.value)} _focus={{ border: "none", boxShadow: "none" }} />
+              <Textarea
+                placeholder="Please type your input here..."
+                border="none"
+                resize="none"
+                minH="150px"
+                value={tempNotes}
+                onChange={(e) => setTempNotes(e.target.value)}
+                _focus={{ border: "none", boxShadow: "none" }}
+                isDisabled={isSavingNotes}
+              />
             </Box>
           </ModalBody>
         </ModalContent>

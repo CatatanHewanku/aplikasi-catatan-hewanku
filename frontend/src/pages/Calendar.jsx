@@ -9,7 +9,6 @@ import { MdAdd, MdChevronLeft, MdChevronRight, MdClose, MdAccessTime, MdWarning,
 import { CacheContext } from "../utils/CacheContext.jsx";
 import { removeEmojis } from "../utils/textUtils.js";
 
-// --- CUSTOM ALARM/CLOCK WHEEL COMPONENT ---
 const ScrollWheel = ({ items, selectedValue, onSelect }) => {
   const containerRef = useRef(null);
   const scrollTimeout = useRef(null);
@@ -88,6 +87,7 @@ export default function Calendar() {
   const [inputText, setInputText] = useState("");
   const [inputTime, setInputTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { isOpen: isDeleteEventOpen, onOpen: onOpenDeleteEvent, onClose: onCloseDeleteEvent } = useDisclosure();
   const [eventToDelete, setEventToDelete] = useState(null);
@@ -232,10 +232,9 @@ export default function Calendar() {
   }, [month, year]);
 
   const saveEvent = async () => {
-    if (!inputText || !inputTime || !selectedDate) {
-      showToast("Please fill in all details", "error");
-      return;
-    }
+    if (!selectedDate) { showToast("Please select a date", "error"); return; }
+    if (!inputText) { showToast("Please enter the event name!", "error"); return; }
+    if (!inputTime) { showToast("Please enter the time!", "error"); return; }
 
     setIsLoading(true);
     try {
@@ -292,16 +291,24 @@ export default function Calendar() {
     }
   };
 
-  const confirmDeleteEvent = async () => {
+const confirmDeleteEvent = async () => {
     if (!eventToDelete) return;
+    
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/reminder/${eventToDelete.reminder_id}`, { method: "DELETE" });
 
       if (response.ok) {
-        showToast("Reminder deleted", "success");
-
         await fetchReminders(eventToDelete.date, true);
         await fetchAllRemindersForMonth(true);
+
+        showToast("Reminder deleted", "success");
+        
+        setIsDeleting(false);
+        onCloseDeleteEvent();
+        setEventToDelete(null);
+        
+        return; 
       } else {
         showToast("Failed to delete reminder", "error");
       }
@@ -309,6 +316,7 @@ export default function Calendar() {
       console.error("Error deleting reminder:", error);
       showToast("Error deleting reminder", "error");
     } finally {
+      setIsDeleting(false); 
       onCloseDeleteEvent();
       setEventToDelete(null);
     }
@@ -479,14 +487,14 @@ export default function Calendar() {
             <Flex direction="column" gap={4}>
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Event Name</Text>
-                <Input bg="white" placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(removeEmojis(e.target.value))} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800" />
+                <Input bg="white" placeholder="E.g., Vet Appointment" value={inputText} onChange={(e) => setInputText(removeEmojis(e.target.value))} isDisabled={isLoading} border="1px" borderColor="Primary.300" focusBorderColor="Primary.800" />
               </Box>
 
               <Box>
                 <Text fontSize="sm" fontWeight="bold" color="Primary.800" mb={1}>Time</Text>
                 <Popover placement="bottom-start" matchWidth isLazy>
                   <PopoverTrigger>
-                    <Flex bg="white" border="1px solid" borderColor="Primary.300" borderRadius="md" p={2} px={4} justify="space-between" align="center" cursor="pointer" _hover={{ borderColor: "Primary.500" }}>
+                    <Flex bg="white" border="1px solid" borderColor="Primary.300" borderRadius="md" p={2} px={4} justify="space-between" align="center" cursor={isLoading ? "not-allowed" : "pointer"} opacity={isLoading ? 0.6 : 1} _hover={{ borderColor: isLoading ? "Primary.300" : "Primary.500" }} pointerEvents={isLoading ? "none" : "auto"}>
                       <Text color={inputTime ? "Primary.900" : "gray.400"}>
                         {inputTime || "Select Time"}
                       </Text>
@@ -509,19 +517,7 @@ export default function Calendar() {
               </Box>
 
               <Menu matchWidth>
-                <MenuButton
-                  as={Flex}
-                  w="100%"
-                  h="40px"
-                  bg="white"
-                  border="1px solid"
-                  borderColor="Primary.300"
-                  borderRadius="md"
-                  px="16px"
-                  cursor="pointer"
-                  alignItems="center"
-                  _hover={{ borderColor: "Primary.800" }}
-                >
+                <MenuButton as={Flex} w="100%" h="40px" bg="white" border="1px solid" borderColor="Primary.300" borderRadius="md" px="16px" alignItems="center" cursor={isLoading ? "not-allowed" : "pointer"} opacity={isLoading ? 0.6 : 1} _hover={{ borderColor: isLoading ? "Primary.300" : "Primary.500" }} pointerEvents={isLoading ? "none" : "auto"}                >
                   <Flex justify="space-between" align="center" h="100%">
                     <Text color="Primary.900" fontSize="md">
                       {selectedTag || "No Category"}
@@ -557,7 +553,7 @@ export default function Calendar() {
           </ModalBody>
 
           <ModalFooter borderTop="1px solid" borderColor="gray.100" mt={2}>
-            <Button mr={3} onClick={() => { setIsOpen(false); setEditingReminderId(null); }} bg="Neutral.100" color="Primary.800" borderRadius="30px">
+            <Button mr={3} onClick={() => { setIsOpen(false); setEditingReminderId(null); }} isDisabled={isLoading} bg="Neutral.100" color="Primary.800" borderRadius="30px">
               Cancel
             </Button>
             <Button bg="Primary.800" color="white" onClick={saveEvent} isDisabled={isLoading} borderRadius="30px" _hover={{ opacity: 0.9 }}>
@@ -567,7 +563,7 @@ export default function Calendar() {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={isDeleteEventOpen} onClose={onCloseDeleteEvent} isCentered>
+      <Modal isOpen={isDeleteEventOpen} onClose={() => !isDeleting && onCloseDeleteEvent()} isCentered closeOnOverlayClick={!isDeleting}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
           <ModalBody>
@@ -576,16 +572,25 @@ export default function Calendar() {
                 <MdWarning size="32px" />
               </Flex>
             </Flex>
-            <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Event?</Text>
+            <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Reminder?</Text>
             <Text color="Primary.800" fontSize="sm" mb={4}>
-              Are you sure you want to cancel this event?
+              Are you sure you want to delete this reminder?
             </Text>
           </ModalBody>
           <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
-            <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDeleteEvent}>
+            <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDeleteEvent} isDisabled={isDeleting}>
               Back
             </Button>
-            <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={confirmDeleteEvent} _hover={{ bg: "red.600" }}>
+            <Button
+              flex="1"
+              bg="red.500"
+              color="white"
+              borderRadius="30px"
+              onClick={confirmDeleteEvent}
+              isLoading={isDeleting}
+              loadingText="Deleting..."
+              _hover={{ bg: "red.600" }}
+            >
               Delete
             </Button>
           </ModalFooter>

@@ -3,7 +3,7 @@ import { MdArrowBack, MdOutlinePhotoCamera, MdClose, MdKeyboardArrowDown, MdPets
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { CacheContext } from "../utils/CacheContext.jsx";
-import { removeEmojis, sanitizeWeight } from "../utils/textUtils.js";
+import { removeEmojis, sanitizeWeight, sanitizeTemperature } from "../utils/textUtils.js";
 import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 import api from "../services/authService.js";
 import DefaultPet from "../images/defaultPet.jpeg";
@@ -136,6 +136,8 @@ export default function QuickNotes() {
     if (isNewPet && pet_dob > todayStr) { showToast("Invalid Date of Birth!", "error"); return; }
     if (!date || !type) { showToast("Please fill in the Examination Date and Consultation Type.", "error"); return; }
     if (date > todayStr) { showToast("Invalid Examination Date!", "error"); return; }
+    if (!weight || !temperature) { showToast("Please fill in the Weight and Temperature.", "error"); return; }
+    if (!vet || !clinic) { showToast("Please fill in the Veterinarian's name and Veterinary Clinic name.", "error"); return; }
     if (type === "Vaccination" && !photo) { showToast("A photo attachment is required for Vaccination records!", "error"); return; }
 
     await executeWithRetry(

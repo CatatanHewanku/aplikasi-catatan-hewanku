@@ -9,7 +9,7 @@ const consultationOptions = ["Vaccination", "General Check Up", "Emergency", "Ot
 export default function MedicationForm() {
   const navigate = useNavigate();
   const { id, logId } = useParams();
-  
+
   const toast = useToast();
   const { isOpen: isDeleteOpen, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure();
 
@@ -24,18 +24,18 @@ export default function MedicationForm() {
   const [record_image, setRecord_image] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
 
   const showToast = (message, status = "success") => {
     toast({
-        position: "top",
-        duration: 3500,
-        render: () => (
-            <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
-                {message}
-            </Box>
-        ),
+      position: "top",
+      duration: 3500,
+      render: () => (
+        <Box bg={status === "error" ? "red.500" : "Primary.800"} color="white" px={6} py={3} borderRadius="30px" textAlign="center" fontWeight="bold" boxShadow="xl" mt="20px">
+          {message}
+        </Box>
+      ),
     });
   };
 
@@ -104,20 +104,11 @@ export default function MedicationForm() {
   };
 
   const handleSubmit = async () => {
-    if (!record_visit_date || !record_consultation_type || !record_vet_name || !record_vet_clinic_name || !record_pet_weight || !record_pet_temperature) {
-      showToast("Please fill in all required fields", "error");
-      return;
-    }
-    
-    if (record_visit_date > todayStr) {
-      showToast("Invalid Examination Date!", "error");
-      return;
-    }
-
-    if (record_consultation_type === "Vaccination" && !record_image) {
-      showToast("Photo is required for Vaccination records", "error");
-      return;
-    }
+    if (!record_visit_date || !record_consultation_type) { showToast("Please fill in the Examination Date and Consultation Type.", "error"); return; }
+    if (record_visit_date > todayStr) { showToast("Invalid Examination Date!", "error"); return; }
+    if (!record_pet_weight || !record_pet_temperature) { showToast("Please fill in the Weight and Temperature.", "error"); return; }
+    if (!record_vet_name || !record_vet_clinic_name) { showToast("Please fill in the Veterinarian's name and Veterinary Clinic name.", "error"); return; }
+    if (record_consultation_type === "Vaccination" && !record_image) { showToast("A photo attachment is required for Vaccination records!", "error"); return; }
 
     setIsLoading(true);
     try {
@@ -180,7 +171,7 @@ export default function MedicationForm() {
 
   return (
     <Flex direction="column" p="20px" gap={4} minH="100vh" pb="120px">
-      
+
       <Flex position="relative" justify="center" align="center" pt="20px" pb="10px" w="100%">
         <Box position="absolute" left="0" cursor="pointer" color="Primary.800" onClick={() => navigate(`/mypet/${id}`)} _hover={{ transform: "scale(1.1)" }} transition="all 0.2s">
           <MdArrowBack size="28px" />
@@ -202,13 +193,13 @@ export default function MedicationForm() {
           Consultation Type
         </Text>
         <Menu matchWidth>
-          <MenuButton 
-            as={Flex} 
-            w="100%" 
-            h="40px" 
-            bg="Primary.100" 
-            borderRadius="md" 
-            px="16px" 
+          <MenuButton
+            as={Flex}
+            w="100%"
+            h="40px"
+            bg="Primary.100"
+            borderRadius="md"
+            px="16px"
             cursor="pointer"
             alignItems="center"
           >
@@ -219,21 +210,21 @@ export default function MedicationForm() {
               <MdKeyboardArrowDown color="gray" size="20px" />
             </Flex>
           </MenuButton>
-          
+
           <MenuList bg="Primary.100" borderColor="Primary.300" maxH="250px" overflowY="auto" zIndex={10} p={0} borderRadius="md" boxShadow="lg">
             {consultationOptions.map((opt, index) => {
               const isSelected = record_consultation_type === opt;
-              
+
               return (
-                <MenuItem 
-                  key={opt} 
-                  onClick={() => setRecord_consultation_type(opt)} 
-                  bg="white" 
+                <MenuItem
+                  key={opt}
+                  onClick={() => setRecord_consultation_type(opt)}
+                  bg="white"
                   _hover={{ bg: "Primary.200" }}
                   color="Primary.800"
-                  fontWeight={isSelected ? "bold" : "medium"} 
+                  fontWeight={isSelected ? "bold" : "medium"}
                   borderBottom={index !== consultationOptions.length - 1 ? "1px solid" : "none"}
-                  borderColor="Primary.300" 
+                  borderColor="Primary.300"
                   py={3}
                 >
                   {opt}
@@ -282,7 +273,7 @@ export default function MedicationForm() {
           border="none"
           focusBorderColor="Primary.800"
           resize="none"
-          color="Primary.800" 
+          color="Primary.800"
           h="180px"
           maxLength={1000}
           value={record_note}
@@ -340,8 +331,8 @@ export default function MedicationForm() {
               borderRadius="12px"
               border="2px solid"
               borderColor="Primary.800"
-              cursor="pointer" 
-              onClick={() => setIsImageZoomOpen(true)} 
+              cursor="pointer"
+              onClick={() => setIsImageZoomOpen(true)}
               _hover={{ opacity: 0.9 }}
             />
           </Box>
@@ -406,52 +397,52 @@ export default function MedicationForm() {
       <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
-            <ModalBody>
-                <Flex justify="center" mb={4}>
-                    <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
-                        <MdWarning size="32px" />
-                    </Flex>
-                </Flex>
-                <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Medical Record?</Text>
-                <Text color="Primary.800" fontSize="sm" mb={4}>
-                    Are you absolutely sure you want to delete this medical log? This action is permanent and cannot be undone.
-                </Text>
-            </ModalBody>
-            <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
-                <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDelete}>
-                    Cancel
-                </Button>
-                <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={handleDelete} _hover={{ bg: "red.600" }}>
-                    Delete
-                </Button>
-            </ModalFooter>
+          <ModalBody>
+            <Flex justify="center" mb={4}>
+              <Flex boxSize="60px" borderRadius="full" bg="red.50" justify="center" align="center" color="red.500">
+                <MdWarning size="32px" />
+              </Flex>
+            </Flex>
+            <Text fontSize="xl" fontWeight="bold" color="Primary.900" mb={2}>Delete Medical Record?</Text>
+            <Text color="Primary.800" fontSize="sm" mb={4}>
+              Are you absolutely sure you want to delete this medical log? This action is permanent and cannot be undone.
+            </Text>
+          </ModalBody>
+          <ModalFooter display="flex" gap={3} justifyContent="center" pt={0}>
+            <Button flex="1" bg="Neutral.100" color="Primary.800" borderRadius="30px" onClick={onCloseDelete}>
+              Cancel
+            </Button>
+            <Button flex="1" bg="red.500" color="white" borderRadius="30px" onClick={handleDelete} _hover={{ bg: "red.600" }}>
+              Delete
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
 
       <Modal isOpen={isImageZoomOpen} onClose={() => setIsImageZoomOpen(false)} isCentered size="xl">
         <ModalOverlay bg="blackAlpha.800" />
         <ModalContent bg="transparent" boxShadow="none" mx={4} position="relative">
-          <IconButton 
-            icon={<MdClose size="24px" />} 
-            isRound 
-            bg="white" 
-            color="Primary.900" 
-            size="md" 
+          <IconButton
+            icon={<MdClose size="24px" />}
+            isRound
+            bg="white"
+            color="Primary.900"
+            size="md"
             position="absolute"
             top="-50px"
             right="0"
             zIndex="10"
-            onClick={() => setIsImageZoomOpen(false)} 
+            onClick={() => setIsImageZoomOpen(false)}
             aria-label="Close image"
             _hover={{ bg: "gray.200", transform: "scale(1.05)" }}
             transition="all 0.2s"
           />
-          <Image 
-            src={photoPreview} 
-            w="100%" 
-            maxH="80vh" 
-            objectFit="contain" 
-            borderRadius="md" 
+          <Image
+            src={photoPreview}
+            w="100%"
+            maxH="80vh"
+            objectFit="contain"
+            borderRadius="md"
           />
         </ModalContent>
       </Modal>

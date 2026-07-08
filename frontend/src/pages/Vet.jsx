@@ -56,79 +56,94 @@ export default function Vet() {
   useEffect(() => {
     const cacheKey = `vetClinics_${owner_id}`;
 
-    const cachedClinics = getCachedData(cacheKey);
-    if (cachedClinics) {
-      setClinics(cachedClinics);
-      setIsLoading(false);
-      return;
-    }
+    const loadClinics = async () => {
+      setIsLoading(true);
+      let clinicsData = getCachedData(cacheKey);
 
-    const fetchClinics = async () => {
-      try {
-        const response = await fetch(`/api/vet-clinics`);
-        const result = await response.json();
+      if (!clinicsData || clinicsData.length === 0) {
+        try {
+          const response = await fetch(`/api/vet-clinics`);
+          const result = await response.json();
 
-        if (response.ok) {
-          let clinicsData = (result.data || []).map((clinic, index) => ({
-            ...clinic,
-            isFavorite: false,
-            originalIndex: index
-          }));
+          if (response.ok) {
+            const apiData = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
 
-          if (owner_id) {
-            try {
-              const favResponse = await fetch(`/api/favorites/owner/${owner_id}`);
-              if (favResponse.ok) {
-                const favResult = await favResponse.json();
-                const favoriteIds = (favResult.data || []).map(fav => fav.clinic_id);
+            clinicsData = apiData.map((clinic, index) => ({
+              ...clinic,
+              isFavorite: false,
+              originalIndex: index
+            }));
 
-                clinicsData = clinicsData.map(clinic => ({
-                  ...clinic,
-                  isFavorite: favoriteIds.includes(clinic.clinic_id)
-                }));
+            if (owner_id && clinicsData.length > 0) {
+              try {
+                const favResponse = await fetch(`/api/favorites/owner/${owner_id}`);
+                if (favResponse.ok) {
+                  const favResult = await favResponse.json();
+                  const favData = Array.isArray(favResult.data) ? favResult.data : (Array.isArray(favResult) ? favResult : []);
+                  const favoriteIds = favData.map(fav => fav.clinic_id);
+
+                  clinicsData = clinicsData.map(clinic => ({
+                    ...clinic,
+                    isFavorite: favoriteIds.includes(clinic.clinic_id)
+                  }));
+                }
+              } catch (favError) {
+                console.error("Error fetching favorites:", favError);
               }
-            } catch (favError) {
-              console.error("Error fetching favorites:", favError);
+            }
+
+            if (clinicsData.length > 0) {
+              updateCache(cacheKey, clinicsData);
             }
           }
-
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
-                clinicsData = clinicsData.map((clinic) => ({
-                  ...clinic,
-                  distance_km: calculateDistance(latitude, longitude, clinic.clinic_latitude, clinic.clinic_longitude)
-                }));
-                clinicsData.sort((a, b) => {
-                  if (a.isFavorite !== b.isFavorite) {
-                    return b.isFavorite - a.isFavorite;
-                  }
-                  return parseFloat(a.distance_km) - parseFloat(b.distance_km);
-                });
-                setClinics(clinicsData);
-                updateCache(cacheKey, clinicsData);
-              },
-              () => {
-                clinicsData.sort((a, b) => b.isFavorite - a.isFavorite);
-                setClinics(clinicsData);
-                updateCache(cacheKey, clinicsData);
-              }
-            );
-          } else {
-            clinicsData.sort((a, b) => b.isFavorite - a.isFavorite);
-            setClinics(clinicsData);
-            updateCache(cacheKey, clinicsData);
-          }
+        } catch (error) {
+          console.error("Error fetching clinics:", error);
         }
-      } catch (error) {
-        console.error("Error fetching clinics:", error);
-      } finally {
+      }
+
+      if (!clinicsData || clinicsData.length === 0) {
+        setClinics([]);
+        setIsLoading(false);
+        return;
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const withDistance = clinicsData.map((clinic) => ({
+              ...clinic,
+              distance_km: (clinic.clinic_latitude && clinic.clinic_longitude)
+                ? calculateDistance(latitude, longitude, clinic.clinic_latitude, clinic.clinic_longitude)
+                : null
+            }));
+
+            withDistance.sort((a, b) => {
+              if (a.isFavorite !== b.isFavorite) return b.isFavorite - a.isFavorite;
+              const distA = a.distance_km ? parseFloat(a.distance_km) : Infinity;
+              const distB = b.distance_km ? parseFloat(b.distance_km) : Infinity;
+              return distA - distB;
+            });
+
+            setClinics(withDistance);
+            setIsLoading(false);
+          },
+          (error) => {
+            console.warn("GPS Denied or Timeout:", error.message);
+            const withoutDistance = [...clinicsData].sort((a, b) => b.isFavorite - a.isFavorite);
+            setClinics(withoutDistance);
+            setIsLoading(false);
+          },
+          { timeout: 7000, enableHighAccuracy: true }
+        );
+      } else {
+        const withoutDistance = [...clinicsData].sort((a, b) => b.isFavorite - a.isFavorite);
+        setClinics(withoutDistance);
         setIsLoading(false);
       }
     };
 
-    fetchClinics();
+    loadClinics();
   }, [owner_id]);
 
   const toggleFavorite = async (clinic_id) => {

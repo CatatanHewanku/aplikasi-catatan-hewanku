@@ -11,7 +11,6 @@ import Calendar from './pages/Calendar'
 import QuickNotes from "./pages/QuickNotes";
 import MedicationForm from "./pages/MedicationForm"
 import MedicationDetail from "./pages/MedicationDetail"
-import NotesDetail from "./pages/NotesForm.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/Signup.jsx";
 import ForgotPasswordEmail from "./pages/ForgotPasswordEmail";
@@ -55,7 +54,6 @@ function App() {
           <Route path="/mypet" element={<MyPet />} />
           <Route path="/medication-form/:id" element={<MedicationForm />} />
           <Route path="/medication-form/:id/:logId" element={<MedicationForm />}/>
-          <Route path="/notes-form/:id" element={<NotesDetail />}/>
           <Route path="/mypet/:id" element={<MedicationDetail />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/vet" element={<Vet />} />
