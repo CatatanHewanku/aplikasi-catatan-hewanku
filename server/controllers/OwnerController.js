@@ -12,13 +12,11 @@ export class OwnerController {
         return res.status(400).json({ message: "All fields are required" })
       }
 
-      // Check if email already exists
       const existingEmail = await OwnerModel.getOwnerByEmail(owner_email)
       if (existingEmail) {
         return res.status(409).json({ message: "Email already registered" })
       }
 
-      // Check if phone number already exists
       const existingPhone = await OwnerModel.getOwnerByPhone(owner_phone_number)
       if (existingPhone) {
         return res.status(409).json({ message: "Phone number already registered" })
@@ -33,14 +31,12 @@ export class OwnerController {
         owner_phone_number
       )
 
-      // Generate JWT token (like login)
       const token = jwt.sign(
         { owner_id: result.owner_id, owner_email: result.owner_email },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       )
 
-      // Create session with device_id
       if (device_id) {
         const { UserSessionModel } = await import("../models/UserSessionModel.js")
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -141,19 +137,16 @@ export class OwnerController {
         return res.status(400).json({ message: "Owner ID is required" })
       }
 
-      // Get current owner data
       const currentOwner = await OwnerModel.getOwnerById(owner_id)
       if (!currentOwner) {
         return res.status(404).json({ message: "Owner not found" })
       }
 
-      // Use provided values or keep existing ones
       const name = owner_name || currentOwner.owner_name
       const email = owner_email || currentOwner.owner_email
       const phone = owner_phone_number || currentOwner.owner_phone_number
       let imageUrl = currentOwner ? currentOwner.owner_image_url : null
 
-      // Check for duplicate email (if email is being changed)
       if (email && email !== currentOwner.owner_email) {
         const existingEmail = await OwnerModel.getOwnerByEmail(email)
         if (existingEmail) {
@@ -161,7 +154,6 @@ export class OwnerController {
         }
       }
 
-      // Check for duplicate phone (if phone is being changed)
       if (phone && phone !== currentOwner.owner_phone_number) {
         const existingPhone = await OwnerModel.getOwnerByPhone(phone)
         if (existingPhone) {
@@ -169,7 +161,6 @@ export class OwnerController {
         }
       }
 
-      // If new image uploaded, save to Cloudinary
       if (req.file) {
         if (currentOwner && currentOwner.owner_image_url) {
           await deleteFromCloudinary(currentOwner.owner_image_url);
@@ -179,10 +170,8 @@ export class OwnerController {
         imageUrl = cloudinaryResult.secure_url;
       }
 
-      // Update all fields
       await OwnerModel.updateOwnerFull(owner_id, name, email, phone, imageUrl)
 
-      // Update password if provided
       if (password) {
         const hashedPassword = await bcrypt.hash(password, 10)
         await OwnerModel.updatePassword(owner_id, hashedPassword)
@@ -212,29 +201,21 @@ export class OwnerController {
         return res.status(404).json({ message: "Owner not found" });
       }
 
-      // Delete owner's profile image
       if (currentOwner.owner_image_url) {
         await deleteFromCloudinary(currentOwner.owner_image_url);
       }
 
-      // Import PetModel to fetch all pets
       const { PetModel } = await import("../models/PetModel.js");
       const { MedicalRecordModel } = await import("../models/MedicalRecordModel.js");
-
-      // Fetch all pets belonging to this owner
       const ownerPets = await PetModel.getPetsByOwner(owner_id);
       
-      // Delete all images from pets and their medical records
       for (const pet of ownerPets) {
-        // Delete pet image
         if (pet.pet_image) {
           await deleteFromCloudinary(pet.pet_image);
         }
         
-        // Fetch all medical records for this pet
         const medicalRecords = await MedicalRecordModel.getRecordsByPetId(pet.pet_id);
         
-        // Delete images from all medical records
         for (const record of medicalRecords) {
           if (record.record_image) {
             await deleteFromCloudinary(record.record_image);
@@ -262,10 +243,8 @@ export class OwnerController {
         return res.status(400).json({ message: "No image file provided" })
       }
 
-      // Upload to Cloudinary in owners folder
       const result = await uploadToCloudinary(req.file, "catatanhewanku/owners")
 
-      // Update owner with image URL
       await OwnerModel.updateOwnerImage(owner_id, result.secure_url)
 
       res.status(200).json({

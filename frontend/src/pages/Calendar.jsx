@@ -96,7 +96,7 @@ export default function Calendar() {
     window.scrollTo(0, 0);
   }, []);
 
-  const tags = ["", "Vaccination", "General Check Up", "Dental Care", "Parasite Control", "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", "Follow-up", "Emergency"];
+  const tags = ["", "Vaccination", "General Check Up", "Emergency", "Other"];
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -206,11 +206,8 @@ export default function Calendar() {
         const remindersByDate = {};
 
         result.data.forEach((reminder) => {
-          // --- THE BUG FIX IS HERE ---
-          // Cuts off the 'T00:00:00' part sent by the database
           const rawDate = reminder.reminder_date.split('T')[0];
 
-          // Re-pads it to strictly match the YYYY-MM-DD the Grid expects
           const [y, m, d] = rawDate.split('-');
           const cleanDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
@@ -275,7 +272,6 @@ export default function Calendar() {
       if (response.ok) {
         showToast(`Reminder ${editingReminderId ? "updated" : "saved"}!`, "success");
 
-        // Pass "true" to force bypassing the cache so the dot appears instantly!
         await fetchReminders(selectedDate, true);
         await fetchAllRemindersForMonth(true);
 
@@ -304,7 +300,6 @@ export default function Calendar() {
       if (response.ok) {
         showToast("Reminder deleted", "success");
 
-        // Pass "true" to force bypassing the cache so the dot vanishes instantly!
         await fetchReminders(eventToDelete.date, true);
         await fetchAllRemindersForMonth(true);
       } else {
@@ -474,7 +469,6 @@ export default function Calendar() {
         </Flex>
       </Box>
 
-      {/* --- ADD/EDIT EVENT MODAL --- */}
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditingReminderId(null); }} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="xl" mx={4}>
@@ -573,7 +567,6 @@ export default function Calendar() {
         </ModalContent>
       </Modal>
 
-      {/* --- CONFIRMATION MODAL FOR DELETING AN EVENT --- */}
       <Modal isOpen={isDeleteEventOpen} onClose={onCloseDeleteEvent} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">

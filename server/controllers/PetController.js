@@ -11,7 +11,6 @@ export class PetController {
         return res.status(400).json({ message: "Required fields are missing" })
       }
 
-      // Handle image file upload to Cloudinary using the helper function
       let pet_image_url = null
       if (req.file) {
         try {
@@ -80,7 +79,6 @@ export class PetController {
       const existingPet = await PetModel.getPetById(pet_id, owner_id)
       if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
-      // Define the single variable to hold our URL, defaulting to the old one
       let pet_image_url = existingPet.pet_image
 
       if (file) {
@@ -95,7 +93,6 @@ export class PetController {
         }
       }
 
-      // Now it passes the correctly updated URL to the database
       const petData = await PetModel.updatePet(pet_id, owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url)
       res.status(200).json({ message: "Pet updated successfully", data: petData })
     } catch (err) {
@@ -113,18 +110,13 @@ export class PetController {
       const existingPet = await PetModel.getPetById(pet_id, owner_id)
       if (!existingPet) return res.status(404).json({ message: "Pet not found" })
 
-      // Delete pet image
       if (existingPet.pet_image) {
         await deleteFromCloudinary(existingPet.pet_image);
       }
 
-      // Import MedicalRecordModel to fetch related records
       const { MedicalRecordModel } = await import("../models/MedicalRecordModel.js");
-
-      // Fetch all medical records for this pet
       const medicalRecords = await MedicalRecordModel.getRecordsByPetId(pet_id);
       
-      // Delete images from all medical records
       for (const record of medicalRecords) {
         if (record.record_image) {
           await deleteFromCloudinary(record.record_image);

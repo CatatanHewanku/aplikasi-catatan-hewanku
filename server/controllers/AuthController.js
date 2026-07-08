@@ -21,15 +21,7 @@ export class AuthController {
       if (!owner) {
         return res.status(401).json({ message: "Invalid email/phone or password" })
       }
-
-      // const activeSession = await UserSessionModel.getActiveSessionByDevice(device_id)
-      // if (activeSession) {
-      //   return res.status(403).json({ 
-      //     message: "This device is already logged in. Please logout first before logging in.",
-      //     current_owner_id: activeSession.owner_id
-      //   })
-      // }
-
+      
       const isPasswordValid = await bcrypt.compare(password, owner.owner_password_hash)    
       if (!isPasswordValid) {
         return res.status(401).json({ message: "Invalid email/phone or password" })
@@ -78,11 +70,9 @@ export class AuthController {
       }
 
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-
       const codeExpiry = new Date(Date.now() + 600000)
 
       await PasswordResetModel.saveResetCode(owner.owner_id, verificationCode, codeExpiry)
-
       await sendVerificationCodeEmail(owner.owner_email, verificationCode)
 
       res.status(200).json({ 

@@ -2,7 +2,6 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class PetModel {
-  // Create new pet
   static async createPet(owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url) {
     const connection = await dbConnection()
 
@@ -37,7 +36,6 @@ export class PetModel {
     }
   }
 
-  // Get pet by ID
   static async getPetById(pet_id, owner_id) {
     const connection = await dbConnection()
 
@@ -59,7 +57,6 @@ export class PetModel {
     }
   }
 
-  // Get all pets by owner
   static async getPetsByOwner(owner_id) {
     const connection = await dbConnection()
 
@@ -81,7 +78,6 @@ export class PetModel {
     }
   }
 
-  // Update pet
   static async updatePet(pet_id, owner_id, pet_name, pet_type, pet_dob, pet_gender, pet_note, pet_image_url) {
     const connection = await dbConnection()
 
@@ -124,7 +120,6 @@ export class PetModel {
     }
   }
 
-  // Delete pet
   static async deletePet(pet_id, owner_id) {
     const connection = await dbConnection()
 

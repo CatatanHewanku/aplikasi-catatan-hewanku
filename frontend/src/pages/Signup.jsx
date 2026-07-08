@@ -151,7 +151,6 @@ export default function SignUp() {
             </InputRightElement>
           </InputGroup>
 
-          {/* === BLOK ERROR GABUNGAN === */}
           {(nameError || passwordError) && (
             <Text color="red.400" fontSize="sm" whiteSpace="pre-wrap" mt="-2">
               {[nameError, passwordError].filter(Boolean).join("\n")}

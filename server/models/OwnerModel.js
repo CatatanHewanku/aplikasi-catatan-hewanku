@@ -2,7 +2,6 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class OwnerModel {
-  // Create new owner
   static async createOwner(owner_name, owner_email, owner_password_hash, owner_phone_number, owner_image_url) {
     const connection = await dbConnection()
 
@@ -32,7 +31,6 @@ export class OwnerModel {
     }
   }
 
-  // Get owner by ID
   static async getOwnerById(owner_id) {
     const connection = await dbConnection()
 
@@ -53,7 +51,6 @@ export class OwnerModel {
     }
   }
 
-  // Get owner by email
   static async getOwnerByEmail(owner_email) {
     const connection = await dbConnection()
 
@@ -74,7 +71,6 @@ export class OwnerModel {
     }
   }
 
-  // Get owner by phone
   static async getOwnerByPhone(owner_phone_number) {
     const connection = await dbConnection()
 
@@ -95,7 +91,6 @@ export class OwnerModel {
     }
   }
 
-  // Get all owners
   static async getAllOwners() {
     const connection = await dbConnection()
 
@@ -114,7 +109,6 @@ export class OwnerModel {
     }
   }
 
-  // Update owner
   static async updateOwner(owner_id, owner_name, owner_email, owner_phone_number) {
     const connection = await dbConnection()
 
@@ -138,7 +132,6 @@ export class OwnerModel {
     }
   }
 
-  // Update owner with all fields including image
   static async updateOwnerFull(owner_id, owner_name, owner_email, owner_phone_number, owner_image_url) {
     const connection = await dbConnection()
 
@@ -167,7 +160,6 @@ export class OwnerModel {
     }
   }
 
-  // Delete owner
   static async deleteOwner(owner_id) {
     const connection = await dbConnection()
 
@@ -187,7 +179,6 @@ export class OwnerModel {
     }
   }
 
-  // Update password
   static async updatePassword(owner_id, new_password_hash) {
     const connection = await dbConnection()
 
@@ -209,7 +200,6 @@ export class OwnerModel {
     }
   }
 
-  // Update owner image (called by uploadOwnerImage controller)
   static async updateOwnerImage(owner_id, owner_image_url) {
     const connection = await dbConnection()
 
@@ -231,7 +221,6 @@ export class OwnerModel {
     }
   }
 
-  // Get owner by email or phone (for login)
   static async getOwnerByEmailOrPhone(identifier) {
     const connection = await dbConnection()
 

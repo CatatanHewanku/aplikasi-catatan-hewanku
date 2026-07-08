@@ -4,11 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { removeEmojis, sanitizeWeight, sanitizeTemperature } from "../utils/textUtils";
 
-const consultationOptions = [
-  "Vaccination", "General Check Up", "Dental Care", "Parasite Control", 
-  "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill", 
-  "Follow-up", "Emergency"
-];
+const consultationOptions = ["Vaccination", "General Check Up", "Emergency", "Other"];
 
 export default function MedicationForm() {
   const navigate = useNavigate();
@@ -407,7 +403,6 @@ export default function MedicationForm() {
         </Button>
       )}
 
-      {/* --- CONFIRMATION MODAL FOR DELETION --- */}
       <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">
@@ -433,7 +428,6 @@ export default function MedicationForm() {
         </ModalContent>
       </Modal>
 
-      {/* --- IMAGE ZOOM MODAL --- */}
       <Modal isOpen={isImageZoomOpen} onClose={() => setIsImageZoomOpen(false)} isCentered size="xl">
         <ModalOverlay bg="blackAlpha.800" />
         <ModalContent bg="transparent" boxShadow="none" mx={4} position="relative">

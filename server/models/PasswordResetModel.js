@@ -2,7 +2,6 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class PasswordResetModel {
-  // Save reset code
   static async saveResetCode(owner_id, verification_code, code_expiry) {
     const connection = await dbConnection()
 
@@ -25,7 +24,6 @@ export class PasswordResetModel {
     }
   }
 
-  // Get reset code by owner_id and code
   static async getResetCode(owner_id, verification_code) {
     const connection = await dbConnection()
 
@@ -47,7 +45,6 @@ export class PasswordResetModel {
     }
   }
 
-  // Mark code as used by owner_id
   static async markTokenAsUsed(owner_id) {
     const connection = await dbConnection()
 
@@ -67,7 +64,6 @@ export class PasswordResetModel {
     }
   }
 
-  // Increment failed attempts
   static async incrementCodeAttempts(owner_id) {
     const connection = await dbConnection()
 
@@ -88,7 +84,6 @@ export class PasswordResetModel {
     }
   }
 
-  // Delete expired codes
   static async deleteExpiredTokens() {
     const connection = await dbConnection()
 
@@ -106,7 +101,6 @@ export class PasswordResetModel {
     }
   }
 
-  // Delete expired code by owner_id
   static async deleteExpiredCodes(owner_id) {
     const connection = await dbConnection()
 

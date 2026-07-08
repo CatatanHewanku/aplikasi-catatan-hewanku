@@ -2,7 +2,6 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class UserSessionModel {
-  // Create new session
   static async createSession(owner_id, device_id, token, expiresAt) {
     const connection = await dbConnection()
 
@@ -26,7 +25,6 @@ export class UserSessionModel {
     }
   }
 
-  // Check if device has active session
   static async getActiveSessionByDevice(device_id) {
     const connection = await dbConnection()
 
@@ -47,7 +45,6 @@ export class UserSessionModel {
     }
   }
 
-  // Hard delete session by device (logout)
   static async deleteSessionByDevice(device_id) {
     const connection = await dbConnection()
 
@@ -67,12 +64,10 @@ export class UserSessionModel {
     }
   }
 
-  // Invalidate session by device (logout) - kept for backwards compatibility
   static async invalidateSessionByDevice(device_id) {
     return this.deleteSessionByDevice(device_id)
   }
 
-  // Verify token is from active session on that device
   static async verifySessionToken(device_id, token) {
     const connection = await dbConnection()
 

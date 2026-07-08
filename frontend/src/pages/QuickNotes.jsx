@@ -8,11 +8,7 @@ import { useSilentRefresh } from "../utils/useSilentRefresh.js";
 import api from "../services/authService.js";
 import DefaultPet from "../images/defaultPet.jpeg";
 
-const consultationOptions = [
-  "Vaccination", "General Check Up", "Dental Care", "Parasite Control",
-  "Nutrition", "Illness/Treatment", "Surgery", "Prescription Refill",
-  "Follow-up", "Emergency"
-];
+const consultationOptions = ["Vaccination", "General Check Up", "Emergency", "Other"];
 
 export default function QuickNotes() {
   const navigate = useNavigate();
@@ -85,7 +81,6 @@ export default function QuickNotes() {
           return;
         }
 
-        // Gunakan api.get dengan endpoint yang sama seperti MyPet.jsx
         const response = await api.get('/pets/owner');
         const petsData = response.data.data || [];
 
@@ -277,7 +272,7 @@ export default function QuickNotes() {
             </MenuButton>
             <MenuList bg="white" borderColor="Primary.800" zIndex={10} p={0} borderRadius="md" boxShadow="lg">
               {["Cat", "Dog", "Other"].map((opt, i) => (
-                <MenuItem key={opt} onClick={() => setTypePet(opt)} bg={typePet === opt ? "Primary.100" : "white"} color="Primary.800" fontWeight={typePet === opt ? "bold" : "normal"} borderBottom={i === 0 ? "1px solid" : "none"} borderColor="Primary.200" py={2}>{opt}</MenuItem>
+                <MenuItem key={opt} onClick={() => setTypePet(opt)} bg={typePet === opt ? "Primary.100" : "white"} color="Primary.800" fontWeight={typePet === opt ? "bold" : "normal"} borderBottom={i === 0 || i === 1 ? "1px solid" : "none"} borderColor="Primary.200" py={2}>{opt}</MenuItem>
               ))}
             </MenuList>
           </Menu>

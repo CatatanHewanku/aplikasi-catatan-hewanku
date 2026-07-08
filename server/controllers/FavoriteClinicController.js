@@ -1,7 +1,6 @@
 import { FavoriteClinicModel } from "../models/FavoriteClinicModel.js"
 
 export class FavoriteClinicController {
-  // Add favorite clinic
   static async addFavorite(req, res) {
     try {
       const { owner_id, clinic_id } = req.body
@@ -23,7 +22,6 @@ export class FavoriteClinicController {
     }
   }
 
-  // Get favorite clinics for owner
   static async getFavorites(req, res) {
     try {
       const { owner_id } = req.params
@@ -39,7 +37,6 @@ export class FavoriteClinicController {
     }
   }
 
-  // Remove favorite clinic
   static async removeFavorite(req, res) {
     try {
       const { owner_id, clinic_id } = req.body
@@ -55,7 +52,6 @@ export class FavoriteClinicController {
     }
   }
 
-  // Check if favorited
   static async checkFavorite(req, res) {
     try {
       const { owner_id, clinic_id } = req.params

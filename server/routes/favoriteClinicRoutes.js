@@ -3,7 +3,6 @@ import { FavoriteClinicController } from "../controllers/FavoriteClinicControlle
 
 const router = express.Router()
 
-// Favorite clinic routes
 router.post("/", FavoriteClinicController.addFavorite)
 router.get("/owner/:owner_id", FavoriteClinicController.getFavorites)
 router.delete("/", FavoriteClinicController.removeFavorite)

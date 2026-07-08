@@ -286,7 +286,6 @@ export default function MyPet() {
         )}
       </Flex>
 
-      {/* --- ADD/EDIT MODAL --- */}
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); resetForm(); }} isCentered closeOnOverlayClick={false}>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="16px" p="10px" mx="20px">
@@ -376,7 +375,6 @@ export default function MyPet() {
         </ModalContent>
       </Modal>
 
-      {/* --- CONFIRMATION MODAL FOR DELETION --- */}
       <Modal isOpen={isDeleteOpen} onClose={onCloseDelete} isCentered>
         <ModalOverlay bg="blackAlpha.600" />
         <ModalContent borderRadius="24px" mx="20px" p={4} textAlign="center" boxShadow="2xl">

@@ -10,7 +10,6 @@ export default function NotesForm() {
   const [notes, setNotes] = useState("");
   
   const handleSave = () => {
-    // Backend fetch logic goes here
     navigate(`/mypet/${id}`);
   };
 

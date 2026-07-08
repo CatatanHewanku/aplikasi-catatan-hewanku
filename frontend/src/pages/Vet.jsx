@@ -315,11 +315,8 @@ export default function Vet() {
           )}
         </Flex>
 
-        {/* === Antarmuka Pagination Diperbarui === */}
         {totalPages > 1 && (
           <Flex justify="space-between" align="center" mt={6} pb={4}>
-
-            {/* Kelompok Tombol Kiri */}
             <Flex gap={2}>
               <Button
                 onClick={() => setCurrentPage(1)}
@@ -347,12 +344,10 @@ export default function Vet() {
               </Button>
             </Flex>
 
-            {/* Teks Informasi Halaman */}
             <Text fontFamily="heading" fontWeight="bold" color="Primary.900" fontSize="sm" textAlign="center">
               Page {currentPage} of {totalPages}
             </Text>
 
-            {/* Kelompok Tombol Kanan */}
             <Flex gap={2}>
               <Button
                 onClick={handleNextPage}

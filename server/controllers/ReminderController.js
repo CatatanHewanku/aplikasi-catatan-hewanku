@@ -1,7 +1,6 @@
 import { ReminderModel } from "../models/ReminderModel.js";
 
 export class ReminderController {
-  // Create a new reminder
   static async createReminder(req, res) {
     try {
       const { owner_id, reminder_date, reminder_title, reminder_time, reminder_category } = req.body;
@@ -9,7 +8,6 @@ export class ReminderController {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Validate time format (HH:MM)
       if (!reminder_time.match(/^\d{2}:\d{2}$/)) {
         return res.status(400).json({ message: "Invalid time format. Expected HH:MM" });
       }
@@ -22,7 +20,6 @@ export class ReminderController {
     }
   }
 
-  // Update reminder by ID
   static async updateReminder(req, res) {
     try {
       const { reminder_id } = req.params;
@@ -32,7 +29,6 @@ export class ReminderController {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Validate time format (HH:MM)
       if (!reminder_time.match(/^\d{2}:\d{2}$/)) {
         return res.status(400).json({ message: "Invalid time format. Expected HH:MM" });
       }
@@ -45,7 +41,6 @@ export class ReminderController {
     }
   }
 
-  // Get reminders by date
   static async getRemindersByDate(req, res) {
     try {
       const { owner_id, reminder_date } = req.query;
@@ -60,7 +55,6 @@ export class ReminderController {
     }
   }
 
-  // Delete reminder by ID
   static async deleteReminder(req, res) {
     try {
       const { reminder_id } = req.params;
@@ -75,7 +69,6 @@ export class ReminderController {
     }
   }
 
-  // Get reminders by month and year
   static async getRemindersByMonthYear(req, res) {
     try {
       const { owner_id, year, month } = req.query;
@@ -90,7 +83,6 @@ export class ReminderController {
     }
   }
 
-  // Get upcoming reminders (next N days)
   static async getUpcomingReminders(req, res) {
     try {
       const { owner_id, days_ahead } = req.query;

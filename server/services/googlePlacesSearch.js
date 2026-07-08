@@ -4,22 +4,15 @@ const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY
 const BASE_URL = 'https://maps.googleapis.com/maps/api/place'
 const GEOCODING_BASE_URL = 'https://maps.googleapis.com/maps/api/geocode'
 
-// Rate limiting tracker (in-memory, resets daily)
 let dailyRequestCount = 0
 let lastResetDate = new Date().toDateString()
-const DAILY_LIMIT = 200 // Conservative limit for free trial ($1.40/day cost)
+const DAILY_LIMIT = 200
 
-// Request queue for rate limiting
 let requestQueue = []
 let lastRequestTime = 0
-const MIN_DELAY_MS = 100 // Minimum 100ms between requests
+const MIN_DELAY_MS = 100
 
-/**
- * Get bounding box for a city using Geocoding API
- * @param {string} cityName - City name (e.g., 'Bekasi')
- * @param {string} country - Country name (e.g., 'Indonesia')
- * @returns {Object} Bounding box with northeast and southwest coordinates
- */
+
 export const getBoundingBox = async (cityName, country) => {
   try {
     if (!GOOGLE_PLACES_API_KEY) {
@@ -51,7 +44,7 @@ export const getBoundingBox = async (cityName, country) => {
     const geometry = response.data.results[0]?.geometry
     if (!geometry || !geometry.bounds) {
       console.log(`Warning: No bounds found for ${cityName}, using viewport instead`)
-      return geometry.viewport // Fallback to viewport if bounds not available
+      return geometry.viewport
     }
 
     return geometry.bounds
@@ -61,9 +54,6 @@ export const getBoundingBox = async (cityName, country) => {
   }
 }
 
-/**
- * Reset daily counter at midnight
- */
 function checkDailyReset() {
   const today = new Date().toDateString()
   if (today !== lastResetDate) {
@@ -73,9 +63,6 @@ function checkDailyReset() {
   }
 }
 
-/**
- * Apply rate limiting before making request
- */
 async function applyRateLimit() {
   checkDailyReset()
 
@@ -83,7 +70,6 @@ async function applyRateLimit() {
     throw new Error(`Daily API limit reached (${DAILY_LIMIT} requests). Try again tomorrow.`)
   }
 
-  // Throttle requests: ensure min delay between requests
   const now = Date.now()
   const timeSinceLastRequest = now - lastRequestTime
   if (timeSinceLastRequest < MIN_DELAY_MS) {
@@ -95,29 +81,20 @@ async function applyRateLimit() {
   console.log(`API Request ${dailyRequestCount}/${DAILY_LIMIT} today`)
 }
 
-/**
- * Search for veterinary clinics within a bounding box
- * @param {Object} bounds - Bounding box with northeast and southwest coordinates
- * @returns {Array} Array of clinic objects
- */
 export const searchVetClinicsGoogle = async (bounds) => {
   try {
     if (!GOOGLE_PLACES_API_KEY) {
       throw new Error('GOOGLE_PLACES_API_KEY not set in environment variables')
     }
 
-    // If bounds is provided, use it; otherwise fall back to center + radius
     if (!bounds || typeof bounds !== 'object') {
       throw new Error('Valid bounds object required (use getBoundingBox() first)')
     }
 
-    // Get center of bounds for search
     const centerLat = (bounds.northeast.lat + bounds.southwest.lat) / 2
     const centerLon = (bounds.northeast.lng + bounds.southwest.lng) / 2
-
-    // Calculate approximate radius from bounds
     const deltaLat = bounds.northeast.lat - bounds.southwest.lat
-    const radiusMeters = (deltaLat / 2) * 111000 // Rough conversion: 1 degree ≈ 111km
+    const radiusMeters = (deltaLat / 2) * 111000
 
     await applyRateLimit()
 
@@ -143,9 +120,7 @@ export const searchVetClinicsGoogle = async (bounds) => {
       return []
     }
 
-    // Transform Google data to our format
     let allClinics = response.data.results.map((place) => {
-      // Get first photo reference (if available)
       let photoReference = null
       if (place.photos && place.photos.length > 0) {
         photoReference = place.photos[0].photo_reference
@@ -166,12 +141,10 @@ export const searchVetClinicsGoogle = async (bounds) => {
       }
     })
 
-    // Handle pagination - Google returns up to 20 results per page
     let nextPageToken = response.data.next_page_token
     let pageCount = 1
 
     while (nextPageToken) {
-      // Must wait before using next_page_token (Google requirement)
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       await applyRateLimit()
@@ -185,7 +158,6 @@ export const searchVetClinicsGoogle = async (bounds) => {
 
       if (nextResponse.data.status === 'OK') {
         const nextClinics = nextResponse.data.results.map((place) => {
-          // Get first photo reference (if available)
           let photoReference = null
           if (place.photos && place.photos.length > 0) {
             photoReference = place.photos[0].photo_reference
@@ -223,11 +195,6 @@ export const searchVetClinicsGoogle = async (bounds) => {
   }
 }
 
-/**
- * Get detailed clinic information
- * @param {string} placeId - Google Place ID
- * @returns {Object} Detailed clinic information
- */
 export const getClinicDetailsGoogle = async (placeId) => {
   try {
     if (!GOOGLE_PLACES_API_KEY) {
@@ -256,9 +223,6 @@ export const getClinicDetailsGoogle = async (placeId) => {
   }
 }
 
-/**
- * Get remaining quota info
- */
 export const getQuotaInfo = () => {
   checkDailyReset()
   return {
@@ -270,9 +234,6 @@ export const getQuotaInfo = () => {
   }
 }
 
-/**
- * Get estimated monthly cost based on daily usage
- */
 export const getEstimatedCost = () => {
   checkDailyReset()
   const estimatedMonthlyRequests = dailyRequestCount * 30

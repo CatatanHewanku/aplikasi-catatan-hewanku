@@ -1,12 +1,5 @@
 import axios from 'axios'
 
-/**
- * Search for veterinary clinics using OpenStreetMap Overpass API
- * @param {number} latitude - Latitude coordinate
- * @param {number} longitude - Longitude coordinate
- * @param {number} radius - Search radius in km (default 5)
- * @returns {Array} Array of clinic objects
- */
 export const searchVetClinicsOSM = async (latitude, longitude, radiusKm = 5) => {
   try {
     const radiusDegrees = radiusKm / 111

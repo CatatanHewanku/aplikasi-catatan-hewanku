@@ -5,7 +5,6 @@ import { verifyToken } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-// Pet routes
 router.post("/", verifyToken, upload.single('pet_image'), PetController.createPet)
 router.get("/owner", verifyToken, PetController.getPetsByOwner)
 router.get("/:pet_id", verifyToken, PetController.getPet)

@@ -2,7 +2,6 @@ import sql from 'mssql'
 import { dbConnection } from '../config/connection.js'
 
 export class MedicalRecordModel {
-  // Create new medical record
   static async createRecord(pet_id, record_visit_date, record_consultation_type, record_vet_name, record_vet_clinic_name, record_pet_weight, record_pet_temperature, record_note = null, record_image = null) {
     const connection = await dbConnection()
 
@@ -31,7 +30,6 @@ export class MedicalRecordModel {
     }
   }
 
-  // Get record by ID
   static async getRecordById(record_id) {
     const connection = await dbConnection()
 
@@ -52,7 +50,6 @@ export class MedicalRecordModel {
     }
   }
 
-  // Get all records by pet ID
   static async getRecordsByPetId(pet_id) {
     const connection = await dbConnection()
     
@@ -74,7 +71,6 @@ export class MedicalRecordModel {
     }
   }
 
-  // Get all records (active only)
   static async getAllRecords() {
     const connection = await dbConnection()
 
@@ -94,7 +90,6 @@ export class MedicalRecordModel {
     }
   }
 
-  // Update record
   static async updateRecord(record_id, record_visit_date, record_consultation_type, record_vet_name, record_vet_clinic_name, record_pet_weight, record_pet_temperature, record_note, record_image) {
     const connection = await dbConnection()
 

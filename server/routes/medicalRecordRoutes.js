@@ -4,7 +4,6 @@ import { upload } from "../config/multer.js"
 
 const router = express.Router()
 
-// Medical Record CRUD routes
 router.post("/", upload.single('record_image'), MedicalRecordController.createRecord)
 router.get("/", MedicalRecordController.getAllRecords)
 router.get("/pet/:pet_id", MedicalRecordController.getRecordsByPet)

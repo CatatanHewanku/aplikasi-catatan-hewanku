@@ -2,14 +2,11 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class ReminderModel {
-  // Create new reminder
   static async createReminder(owner_id, reminder_date, reminder_title, reminder_time, reminder_category) {
     const connection = await dbConnection()
 
     try {
       const request = connection.request()
-
-      // Keep time as string HH:MM:SS (no timezone conversion needed)
       const timeWithSeconds = reminder_time.length === 5 ? `${reminder_time}:00` : reminder_time
 
       request.input('owner_id', sql.Int, owner_id)
@@ -37,7 +34,6 @@ export class ReminderModel {
     }
   }
 
-  // Get reminder by Date
   static async getReminderByDate(owner_id, reminder_date) {
     const connection = await dbConnection()
 
@@ -62,7 +58,6 @@ export class ReminderModel {
     }
   }
 
-  // Get reminders by Month and Year
   static async getReminderByMonthYear(owner_id, year, month) {
     const connection = await dbConnection()
 
@@ -90,7 +85,6 @@ export class ReminderModel {
     }
   }
 
-  // Get all reminders from today onwards
   static async getUpcomingReminders(owner_id, daysAhead = 90) {
     const connection = await dbConnection()
 
@@ -117,14 +111,11 @@ export class ReminderModel {
     }
   }
 
-  // Update reminder by ID
   static async updateReminderById(reminder_id, reminder_title, reminder_time, reminder_category) {
     const connection = await dbConnection()
 
     try {
       const request = connection.request()
-
-      // Keep time as string HH:MM:SS (no timezone conversion needed)
       const timeWithSeconds = reminder_time.length === 5 ? `${reminder_time}:00` : reminder_time
 
       request.input('reminder_id', sql.Int, reminder_id)
@@ -154,7 +145,6 @@ export class ReminderModel {
     }
   }
 
-  // Delete reminder by ID
   static async deleteReminderById(reminder_id) {
     const connection = await dbConnection()
 

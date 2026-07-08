@@ -4,7 +4,6 @@ import { upload } from "../config/multer.js"
 
 const router = express.Router()
 
-// Owner routes
 router.post("/", OwnerController.createOwner)
 router.get("/", OwnerController.getAllOwners)
 router.get("/email/:owner_email", OwnerController.getOwnerByEmail)

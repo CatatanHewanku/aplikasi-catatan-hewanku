@@ -2,14 +2,12 @@ import sql from "mssql"
 import { dbConnection } from "../config/connection.js"
 
 export class FavoriteClinicModel {
-  // Add favorite clinic (max 3)
   static async addFavorite(owner_id, clinic_id) {
     const connection = await dbConnection()
 
     try {
       const request = connection.request()
   
-      // Check current favorites count
       request.input('owner_id', sql.Int, owner_id)
       const countResult = await request.query(`
         SELECT COUNT(*) as count FROM FavoriteClinic WHERE owner_id = @owner_id
@@ -20,7 +18,6 @@ export class FavoriteClinicModel {
         throw new Error('Maximum 3 favorite clinics allowed')
       }
   
-      // Check if already favorited
       const checkRequest = connection.request()
       checkRequest.input('owner_id', sql.Int, owner_id)
       checkRequest.input('clinic_id', sql.Int, clinic_id)
@@ -34,7 +31,6 @@ export class FavoriteClinicModel {
         throw new Error('Clinic is already favorited')
       }
   
-      // Add favorite
       const insertRequest = connection.request()
       insertRequest.input('owner_id', sql.Int, owner_id)
       insertRequest.input('clinic_id', sql.Int, clinic_id)
@@ -51,7 +47,6 @@ export class FavoriteClinicModel {
     }
   }
 
-  // Get favorite clinics for owner
   static async getFavoritesByOwner(owner_id) {
     const connection = await dbConnection()
 
@@ -85,7 +80,6 @@ export class FavoriteClinicModel {
     }
   }
 
-  // Remove favorite clinic
   static async removeFavorite(owner_id, clinic_id) {
     const connection = await dbConnection()
 
@@ -106,7 +100,6 @@ export class FavoriteClinicModel {
     }
   }
 
-  // Check if clinic is favorited
   static async isFavorited(owner_id, clinic_id) {
     const connection = await dbConnection()
 
