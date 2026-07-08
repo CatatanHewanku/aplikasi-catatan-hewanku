@@ -132,7 +132,7 @@ export default function QuickNotes() {
 
   const handleSubmit = async () => {
     if (!selectedPet) { showToast("Please select a pet or create a new one!", "error"); return; }
-    if (isNewPet && (!name || !typePet || !gender || !pet_dob)) { showToast("Please fill out the Name, Date of Birth, Type, and Gender for the new pet.", "error"); return; }
+    if (isNewPet && (!name || !typePet || !gender || !pet_dob)) { showToast("Please fill out the pet information for the new pet.", "error"); return; }
     if (isNewPet && pet_dob > todayStr) { showToast("Invalid Date of Birth!", "error"); return; }
     if (!date || !type) { showToast("Please fill in the Examination Date and Consultation Type.", "error"); return; }
     if (date > todayStr) { showToast("Invalid Examination Date!", "error"); return; }
