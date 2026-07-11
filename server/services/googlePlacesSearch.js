@@ -206,7 +206,7 @@ export const getClinicDetailsGoogle = async (placeId) => {
     const url = `${BASE_URL}/details/json`
     const params = {
       place_id: placeId,
-      fields: 'name,formatted_address,geometry,formatted_phone_number,website,opening_hours,rating,review,url',
+      fields: 'name,formatted_address,geometry,formatted_phone_number,website,opening_hours,rating,review,url,photos',
       key: GOOGLE_PLACES_API_KEY
     }
 

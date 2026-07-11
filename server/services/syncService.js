@@ -1,16 +1,16 @@
 import cron from 'node-cron'
 import { VetClinicModel } from '../models/VetClinicModel.js'
-import { searchVetClinicsGoogle, getBoundingBox } from './googlePlacesSearch.js'
+import { searchVetClinicsGoogle, getBoundingBox, getClinicDetailsGoogle } from './googlePlacesSearch.js'
 import { cloudinary } from '../config/cloudinary.js'
 import { Readable } from "stream"
 import axios from "axios"
 
 const INDONESIAN_CITIES = [
-  // { name: 'Jakarta', country: 'Indonesia' },
-  // { name: 'Bogor', country: 'West Java' },
-  // { name: 'Depok', country: 'West Java' },
+  { name: 'Jakarta', country: 'Indonesia' },
+  { name: 'Bogor', country: 'West Java' },
+  { name: 'Depok', country: 'West Java' },
   { name: 'Tangerang', country: 'Banten' },
-  // { name: 'Bekasi', country: 'West Java' },
+  { name: 'Bekasi', country: 'West Java' }
 ]
 
 const cacheMetadata = new Map()
@@ -49,8 +49,11 @@ async function downloadAndUploadClinicPhoto(photoReference, clinicName) {
 export const syncClinicsFromGoogle = async () => {
   console.log('🔄 Starting Google Places auto-sync...')
   let totalClinicsSaved = 0
+  let totalClinicsUpdated = 0
   let totalClinicsFailed = 0
   let totalPhotosUploaded = 0
+
+  const syncedPlaceIds = new Set();
 
   for (const city of INDONESIAN_CITIES) {
     try {
@@ -85,7 +88,8 @@ export const syncClinicsFromGoogle = async () => {
               clinic.phone,
               clinic.clinic_photo_reference
             )
-            console.log(`  ✏️ Updated: ${clinic.clinic_name}`)
+            console.log(`  ✏️ Updated via Search: ${clinic.clinic_name}`)
+            totalClinicsUpdated++
 
             const existingClinics = await VetClinicModel.getAllClinics()
             clinicId = existingClinics.find(c => c.place_id === clinic.place_id)?.clinic_id
@@ -103,6 +107,8 @@ export const syncClinicsFromGoogle = async () => {
             totalClinicsSaved++
             console.log(`  ✅ Created: ${clinic.clinic_name}`)
           }
+
+          syncedPlaceIds.add(clinic.place_id);
 
           if (clinic.clinic_photo_reference && clinicId) {
             console.log(`  📸 Uploading photo for ${clinic.clinic_name}...`)
@@ -130,15 +136,53 @@ export const syncClinicsFromGoogle = async () => {
       })
 
       console.log(`  ✅ ${city.name}: ${clinics.length} clinics processed`)
+      await new Promise(resolve => setTimeout(resolve, 5000))
     } catch (err) {
       console.error(`❌ Error syncing ${city.name}:`, err.message)
       totalClinicsFailed++
     }
   }
 
+  console.log('🧹 Starting Phase 2: Updating older clinics not found in search...');
+  try {
+    const allDbClinics = await VetClinicModel.getAllClinics();
+    
+    for (const dbClinic of allDbClinics) {
+      if (!syncedPlaceIds.has(dbClinic.place_id)) {
+        console.log(`  🔍 Fetching details for older clinic: ${dbClinic.clinic_name}...`);
+        
+        const latestData = await getClinicDetailsGoogle(dbClinic.place_id);
+        
+        if (latestData) {
+          const photoRef = latestData.photos && latestData.photos.length > 0 
+                           ? latestData.photos[0].photo_reference 
+                           : null;
+
+          await VetClinicModel.updateClinicByPlaceId(
+            dbClinic.place_id, 
+            latestData.name, 
+            latestData.formatted_address,
+            latestData.geometry?.location?.lat, 
+            latestData.geometry?.location?.lng,
+            latestData.formatted_phone_number || null, 
+            photoRef
+          );
+
+          console.log(`  ✏️ Updated via Details API: ${latestData.name}`);
+          totalClinicsUpdated++;
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error during Phase 2 Sweep:", err.message);
+  }
+
   console.log(`
    ✅ Sync Complete!
-   Saved: ${totalClinicsSaved} new clinics
+   Saved (New): ${totalClinicsSaved}
+   Updated (Existing): ${totalClinicsUpdated}
    Photos uploaded: ${totalPhotosUploaded}
    Failed: ${totalClinicsFailed}
    Next sync: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleString()}
@@ -146,13 +190,13 @@ export const syncClinicsFromGoogle = async () => {
 
   return {
     saved: totalClinicsSaved,
+    updated: totalClinicsUpdated,
     photos_uploaded: totalPhotosUploaded,
     failed: totalClinicsFailed,
     timestamp: new Date(),
     nextSync: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   }
 }
-
 
 export const isCacheExpired = (cityName = null) => {
   if (!cityName) {
