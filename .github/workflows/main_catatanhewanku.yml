@@ -25,14 +25,14 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-           cd frontend
-            npm install
-            npm run build
-            cd ..
+          cd frontend
+          npm install
+          npm run build
+          cd ..
 
-            echo "Menyiapkan backend..."
-            cd server
-            npm install
+          echo "Menyiapkan backend..."
+          cd server
+          npm install
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
